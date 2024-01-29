@@ -1,0 +1,7 @@
+name=Save Playville!
+author=Nate Beaty, Clixel Games
+description=Save the citizens!
+bundleID=com.clixel.saveplayville
+imagePath=system/
+version=1.0
+buildNumber=1
