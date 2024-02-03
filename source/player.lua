@@ -1,283 +1,199 @@
-function create_player()
-  local player = {}
-  player.width=40
-  player.height=40
-  player.startX=4
-  player.startY=113
-  player.x=player.startX
-  player.y=player.startY
-  player.dx=0
-  player.dy=0
-  player.fuel=999
-  player.lowfuel=300
-  player.life=3
-  player.score=0
-  player.extralife=0
-  player.dying=0
-  player.mode="plane"
-  player.dir="n"
-  player.boxes = {}
-  player.boxes["man"]={x1=0,y1=0,x2=40,y2=40}
-  player.boxes["plane"]={x1=0,y1=0,x2=40,y2=40}
-  player.mode_stats = {
-    man={
-      maxspd=2,
-      minspd=1,
-      drg=0.4,
-      a=0.25
-    },
-    plane={
-      maxspd=2.5,
-      minspd=1,
-      drg=0.95,
-      a=0.25
-    }
-  }
-  player.smokes={{x=0,y=0},{x=0,y=0},{x=0,y=0},{x=0,y=0}}
-  player.imagemapDirections={
-    nw=1,
-    n=2,
-    ne=3,
-    w=4,
-    e=6,
-    sw=7,
-    s=8,
-    se=9
-  }
-  player.box=player.boxes[player.mode]
-  player.maxspd=player.mode_stats[player.mode]['maxspd'] --max speed
-  player.minspd=player.mode_stats[player.mode]['minspd'] --min speed
-  player.a=player.mode_stats[player.mode]['a'] --acceleration
-  player.drg=player.mode_stats[player.mode]['drg'] --friction (1=none,0=instant)
+import "CoreLibs/animation"
 
-  player.sprite=gfx.sprite.new()
-  player.sprite.images=gfx.imagetable.new("images/player")
-  player.sprite:setCollideRect(player.box['x1'],player.box['y1'],player.box['x2'],player.box['x2'])
-  player.sprite:moveTo(player.x,player.y)
-  player.sprite:setZIndex(1000)
-  player.sprite:add()
+class('Player').extends(playdate.graphics.sprite)
+
+-- local references
+local gfx <const> = playdate.graphics
+local point <const> = playdate.geometry.point
+local rect <const> = playdate.geometry.rect
+local vector2D <const> = playdate.geometry.vector2D
+local affineTransform <const> = playdate.geometry.affineTransform
+local min, max, abs, floor = math.min, math.max, math.abs, math.floor
+
+-- constants
+local MAX_VELOCITY = 5.4
+local MIN_VELOCITY = 1.8
+local FLY_VELOCITY = 2.1
+local FLY_FRICTION = 0.95
+-- plane sprite indexes
+local NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9
+local startX = 15
+local startY = 182
+local minXPosition = 10
+local maxXPosition = 390
+local minYPosition = -230
+local maxYPosition = 230
+
+local playerImages = gfx.imagetable.new("images/player")
+
+function Player:init()
+  Player.super.init(self)
+  self.facing = N
+  self:setImage(playerImages:getImage(self.facing))
+  self:setZIndex(1000)
+  self:moveTo(startX, startY)
+  self:setCollideRect(5,5,30,30)
+
+  self.life = 3
+  self.score = 10
+  self.fuel = 999
+  self.position = point.new(startX, startY)
+  self.mode = "plane"
+  self.exploding = false
+  self.velocity = vector2D.new(0,0)
+end
+
+function Player:die()
+  new_explosion(self.position.x, self.position.y)
+  self.life -= 1
+  self.dying = 1
+  self.resetPlayerTimer = playdate.frameTimer.new(10, player_respawn)
+end
+
+function Player:respawn()
+  self.facing = N
+  self:setImage(playerImages:getImage(self.facing))
+  self.position = point.new(startX, startY)
+  self.velocity = vector2D.new(0,0)
+  self.dying = nil
+end
 
 
-  function player:collisionResponse(other)
-    return gfx.sprite.kCollisionTypeOverlap
+function Player:update()
+  if self.dying ~= nil then
+    self:setImage(nil)
+    return
   end
 
-  function player:resupply()
-    player.fuel+=400
-    if (player.fuel>999) then player.fuel=999 end
-  end
+  local upPressed, downPressed, leftPressed, rightPressed = playdate.buttonIsPressed("UP"), playdate.buttonIsPressed("DOWN"), playdate.buttonIsPressed("LEFT"), playdate.buttonIsPressed("RIGHT")
+  local nobuttonPressed = not upPressed and not downPressed and not leftPressed and not rightPressed
 
-  function player:reset()
-    player.fuel=999
-    player.mode="man"
-    player.score=0
-    player.extralife=0
-    player.life=3
-  end
-
-  function player:scored(points)
-    player.score+=points
-    player.extralife+=points
-    -- extra life?
-    if player.extralife>=100 then
-      player.extralife=0
-      if (player.life<5) then
-        sfx(15)
-        player.life+=1
-      end
-    end
-  end
-
-  function player:die()
-    new_explosion(player.x,player.y)
-    -- if player.mode=="plane" then
-    --   sfx(01)
-    -- else
-    --   sfx(14)
-    -- end
-    player.life-=1
-    if (player.life==0) then
-      game_over()
+  if upPressed then
+    if leftPressed then
+      self.facing = NW
+    elseif rightPressed then
+      self.facing = NE
     else
-      player.dying=10
-      player.dx=0
-      player.dy=0
+      self.facing = N
+      self.velocity.x = 0
     end
-  end
-
-  function player:switch_modes(mode)
-    player.mode=mode
-    player.box=player.boxes[player.mode]
-    player.maxspd=player.mode_stats[player.mode]['maxspd'] --max speed
-    player.minspd=player.mode_stats[player.mode]['minspd'] --min speed
-    player.a=player.mode_stats[player.mode]['a'] --acceleration
-    player.drg=player.mode_stats[player.mode]['drg'] --friction (1=none,0=instant)
-  end
-
-  function player:respawn()
-    player.fuel=999
-    player.mode="man"
-    player.x=player.startX
-    player.y=player.startY
-    player.dx=0
-    player.dy=0
-  end
-
-  --smoke from back of plane (this is a mess! but it works?)
-  function player:smoke()
-    if player.dir=="n" then
-      player.smokes[t%#player.smokes]={x=player.x+3,y=player.y-player.dy*1.5+rnd(2)+6}
-    elseif player.dir=="s" then
-      player.smokes[t%#player.smokes]={x=player.x+3,y=player.y-player.dy*1.5-rnd(2)-1}
-    elseif player.dir=="w" then
-      player.smokes[t%#player.smokes]={x=player.x-player.dx*1.5+rnd(2)+4,y=player.y+4}
-    elseif player.dir=="e" then
-      player.smokes[t%#player.smokes]={x=player.x-player.dx*1.5-rnd(2)+2,y=player.y+4}
-    elseif player.dir=="se" then
-      player.smokes[t%#player.smokes]={x=player.x-player.dx*1.5-rnd(2),y=player.y-player.dy*1.5-rnd(2)}
-    elseif player.dir=="sw" then
-      player.smokes[t%#player.smokes]={x=player.x+player.dx*1.5+8+rnd(2),y=player.y-player.dy*1.5+2-rnd(2)}
-    elseif player.dir=="nw" then
-      player.smokes[t%#player.smokes]={x=player.x+player.dx*1.5+8+rnd(2),y=player.y-player.dy*1.5+6-rnd(2)}
-    elseif player.dir=="ne" then
-      player.smokes[t%#player.smokes]={x=player.x-player.dx*1.5-rnd(2),y=player.y-player.dy*1.5+6+rnd(2)}
-    end
-  end
-
-  --player update
-  function player:update()
-    local t=playdate.timer.currentTime
-
-    --wait a spell before respawn
-    if (player.dying>0) then
-
-      player.dying-=1
-      if player.dying==0 then
-        player:respawn()
-      end
-
+    self.velocity.y = self.velocity.y - FLY_VELOCITY
+  elseif downPressed then
+    if leftPressed then
+      self.facing = SW
+    elseif rightPressed then
+      self.facing = SE
     else
+      self.facing = S
+      self.velocity.x = 0
+    end
+    self.velocity.y = self.velocity.y + FLY_VELOCITY
+  end
 
-      --switch between man/plane?
-      if player.mode=="man" and player.y<112 then
-        player:switch_modes('plane')
-        sfx(10)
-      elseif player.mode=="plane" and player.y>104 then
-        if player.x>16 then
-          player:die()
-        else
-          player:switch_modes('man')
-          sfx(10)
-        end
-      end
+  if leftPressed then
+    if not upPressed and not downPressed then
+      self.velocity.y = 0
+      self.facing = W
+    end
+    self.velocity.x = self.velocity.x - FLY_VELOCITY
+  elseif rightPressed then
+    if not upPressed and not downPressed then
+      self.facing = E
+      self.velocity.y = 0
+    end
+    self.velocity.x = self.velocity.x + FLY_VELOCITY
+  end
 
-      --fuel check
-      if (t%2==0) then
-        if player.mode=="man" then
-          --manfuel
-          player.fuel-=0.1
-        else
-          --planefuel (empties faster based on velocity)
-          if (player.dy~=0 or player.dx~=0) then player.fuel-=(abs(player.dx)+abs(player.dy)) else player.fuel-=0.5 end
-        end
-        --low fuel klaxon
-        -- if (player.fuel<player.lowfuel and t%40==0) sfx(13)
-        player.fuel=max(player.fuel,0)
-        --out of fuel!
-        if (player.fuel==0) then player:die() end
-      end
+  if self.facing == E or self.facing == W then
+    self:setCollideRect(8,15,25,10)
+  else
+    self:setCollideRect(10,10,20,20)
+  end
 
-      if playdate.buttonIsPressed("UP") then
-        player.dy-=player.a
-      elseif playdate.buttonIsPressed("DOWN") then
-        player.dy+=player.a
-      end
-      if playdate.buttonIsPressed("LEFT") then
-        player.dx-=player.a
-      elseif playdate.buttonIsPressed("RIGHT") then
-        player.dx+=player.a
-      end
+  self.velocity.x = self.velocity.x * FLY_FRICTION
+  self.velocity.y = self.velocity.y * FLY_FRICTION
 
-      --pewpew
-      -- if playdate.buttonJustPressed("B") or playdate.buttonJustPressed("A") then
-      --   if mode=="game" and (player.mode=="man" or abs(player.dx)~=0 or abs(player.dy)~=0) then
-      --     sfx(00)
-      --     local dx=player.dx
-      --     local dy=player.dy
-      --     -- support for quick turn and shoots (should this just rely on player.dir?)
-      --     if player.dy==0 and (player.dir=="w" and player.dx>0) or (player.dir=="e" and player.dx<0)) then dx=player.dx*-1 end
-      --     if player.dx==0 and ((player.flipy and player.dy<0) or (not player.flipy and player.dy>0)) then dy=player.dy*-1 end
-      --     if player.mode=="plane" then
-      --       add(bullets,new_bullet(player.x+3,player.y+4,dx,dy))
-      --     else
-      --       add(bullets,new_man_bullet(player.x+3,player.y+4,dx,dy))
-      --     end
-      --   end
-      -- end
+  -- if playdate.buttonIsPressed("B") then
+  if playdate.buttonJustPressed("A") then
+    self:shoot()
+  end
 
-      --limit to max speed
-      player.dx=mid(-player.maxspd,player.dx,player.maxspd)
-      player.dy=mid(-player.maxspd,player.dy,player.maxspd)
-      if (player.dx>0 and player.dx<player.minspd) then player.dx=-0.1 end
-      if (player.dx<0 and abs(player.dx)<player.minspd) then player.dx=0.1 end
+  -- don't accelerate past max velocity
+  self.velocity.x = maxVelocity(self.velocity.x, MAX_VELOCITY)
+  self.velocity.y = maxVelocity(self.velocity.y, MAX_VELOCITY)
+  self.velocity.x = minVelocity(self.velocity.x, MIN_VELOCITY)
+  self.velocity.y = minVelocity(self.velocity.y, MIN_VELOCITY)
 
-      --check if next to wall
-      -- wall_check(p)
+  if (nobuttonPressed) then
+    if self.velocity.x==0 and self.velocity.y<0 then self.facing=N end
+    if self.velocity.x==0 and self.velocity.y>0 then self.facing=S end
+    if self.velocity.x>0 and self.velocity.y==0 then self.facing=E end
+    if self.velocity.x<0 and self.velocity.y==0 then self.facing=W end
+    if self.velocity.x>0 and self.velocity.y<0 then self.facing=NE end
+    if self.velocity.x<0 and self.velocity.y<0 then self.facing=NW end
+    if self.velocity.x>0 and self.velocity.y>0 then self.facing=SE end
+    if self.velocity.x<0 and self.velocity.y>0 then self.facing=SW end
+  end
 
-      -- check_building_hit(p,"player")
 
-      --can move?
-      -- if (can_move(p,player.dx,player.dy)) then
-        -- player.x+=player.dx
-        -- player.y+=player.dy
+  -- update Player position based on current velocity
+  local velocityStep = self.velocity
+  self.position = self.position + velocityStep
 
-        local actualX, actualY, collisions, length = plane:moveWithCollisions(player.x+player.dx,player.y+player.dy)
-        -- for i = 1, length do
-        --   local collision = collisions[i]
-        --   if collision.other.isEnemy == true then -- crashed into enemy plane
-        --     destroyEnemyPlane(collision.other)
-        --     collision.other:remove()
-        --     score -= 1
-        --   end
-        -- end
+  -- don't move outside the walls of the game
+  if self.position.x < minXPosition then
+    self.velocity.x = 0
+    self.position.x = minXPosition
+  elseif self.position.x > maxXPosition then
+    self.velocity.x = 0
+    self.position.x = maxXPosition
+  end
+  if self.position.y < minYPosition then
+    self.velocity.y = 0
+    self.position.y = minYPosition
+  elseif self.position.y > maxYPosition then
+    self.velocity.y = 0
+    self.position.y = maxYPosition
+  end
 
-        -- player:smoke()
-        player.sprite:setImage(plane.images:getImage(playerDirections[player.dir]))
-      -- else
-      --   player.dx=0
-      --   player.dy=0
-      -- end
+  -- set player sprite based on direction
+  self:setImage(playerImages:getImage(self.facing))
 
-      --add drag
-      if (abs(player.dx)>0) then player.dx*=player.drg end
-      if (abs(player.dy)>0) then player.dy*=player.drg end
-
-      --make sure they don't drop below min speed
-      if player.mode=="plane" then
-        player.dx=minspeed(player.dx,player.minspd)
-        player.dy=minspeed(player.dy,player.minspd)
-      end
-
+  local collisions, len
+  self.position.x, self.position.y, collisions, len = self:moveWithCollisions(self.position)
+  for i = 1, len do
+    local collision = collisions[i]
+    if collision.other:isa(Enemy) == true then -- crashed into enemy
+      collision.other:die()
+      self:die()
     end
   end
 
-  --player draw
-  -- function player:draw()
-  --   if player.dying==0 then
-  --     if player.mode=="man" then
-  --       spr(0,player.x,player.y,1,1,player.flipx)
-  --       --draw docked plane if man
-  --       spr(18,4,104)
-  --     else
-  --       if abs(player.dx)>0 or abs(player.dy)>0 then
-  --         for i=1,3 do
-  --           pset(player.smokes[i].x+rnd(2),player.smokes[i].y+rnd(2),6)
-  --         end
-  --       end
-  --       spr(player.sprite,player.x,player.y,1,1,player.flipx,player.flipy)
-  --     end
-  --   end
+end
+
+-- shoot!
+function Player:shoot()
+  if mode=="game" and (self.mode=="man" or abs(self.velocity.x)~=0 or abs(self.velocity.y)~=0) then
+
+    -- sfx(00)
+    local vx=self.velocity.x
+    local vy=self.velocity.y
+
+    -- support for quick turn and shoots when direction doesn't match flipx/flipy
+    -- if self.velocity.y==0 and ((self.facing == W and self.velocity.x > 0) or (self.facing == E and self.velocity.x < 0)) then vx=self.velocity.x*-1 end
+    -- if self.velocity.x==0 and ((self.facing == N and self.velocity.y<0) or (self.facing == S and self.velocity.y>0)) then vy=self.velocity.y*-1 end
+
+    local b = Bullet:new()
+    b:moveTo(self.position.x-1, self.position.y-1)
+    b:setVelocity(self.velocity.x, self.velocity.y, self.facing)
+    b:addSprite()
+
+  end
+end
+
+function Player:collisionResponse(other)
+  -- if other:isa(Enemy) then
+    return "overlap"
   -- end
-
-  return player
+  -- return "bounce"
 end

@@ -1,66 +1,91 @@
+import 'CoreLibs/frameTimer'
 import 'CoreLibs/graphics'
-import 'CoreLibs/sprites'
--- import 'CoreLibs/input'
-import "CoreLibs/timer"
+import 'utility'
+import 'player'
+import 'bullet'
+import 'enemy'
+import 'animations'
+import 'levels/city'
+-- import 'level'
+
+-- betterize random
+math.randomseed(playdate.getSecondsSinceEpoch())
 
 local gfx <const> = playdate.graphics
--- local geo <const> = playdate.geometry
--- local point <const> = geo.point
-local timer <const> = playdate.timer
+local frameTimer <const> = playdate.frameTimer
+local font <const> = gfx.font.new('images/font/Sasser-Slab-Bold')
+local point <const> = playdate.geometry.point
 
-local gfx = playdate.graphics
-local s, ms = playdate.getSecondsSinceEpoch()
-math.randomseed(ms,s)
+local numEnemies = 0
+local maxEnemies = 5
+local cameraY = 0
 
-import 'player'
-
-local score = 0
-local player = create_player()
-
-local function createBackgroundSprite()
-
-  local bg = gfx.sprite.new()
-  local bgImg = gfx.image.new('images/background2.png')
-  local w, h = bgImg:getSize()
-  -- bgH = h
-  bg:setBounds(0, 0, 400, 240)
-
-  function bg:draw(x, y, width, height)
-    bgImg:draw(0, 0)
-    -- bgImg:draw(0, bgY-bgH)
+local status = gfx.sprite:new()
+status:setIgnoresDrawOffset(true)
+status:setZIndex(1000)
+status:moveTo(0,0)
+status:setCenter(0, 0) -- set center point to left bottom
+status:setSize(400,25)
+status:add()
+function status:draw()
+  -- gfx.fillRect(0,0,400,25)
+  gfx.setFont(font)
+  gfx.drawText('FUEL: '..player.fuel, 5, 5)
+  gfx.drawTextAligned('SCORE: '..player.score, 200, 5, kTextAlignment.center)
+  local heart = gfx.image.new('images/heart')
+  for i=1,player.life do
+    heart:draw(395-i*15,6)
   end
-
-  function bg:update()
-    -- bgY += 1
-    -- if bgY > bgH then
-    --   bgY = 0
-    -- end
-    -- self:markDirty()
-  end
-
-  bg:setZIndex(0)
-  bg:add()
-
 end
 
-createBackgroundSprite()
--- player = createPlayer(200, 180)
+function setup()
+  player = Player()
+  player:addSprite()
+  city = City()
+  animations = Animations()
+  mode = "game"
+end
+
+function check_enemy_spawn()
+  if (numEnemies < maxEnemies and rnd()>0.95) then
+    local enemy = Enemy(point.new(rnd(400), -cameraY ))
+    enemy:addSprite()
+    numEnemies += 1
+  end
+end
+function remove_enemy(e)
+  numEnemies -= 1
+  print(numEnemies)
+  e:remove()
+end
+
+function player_respawn()
+  player:respawn()
+end
+function new_explosion(x,y)
+  animations:explosion(x,y)
+end
+
+function score(n)
+  player.score += n
+end
+
+setup()
 
 function playdate.update()
-
-  timer.updateTimers()
-
-  -- if playdate.buttonJustPressed("B") or playdate.buttonJustPressed("A") then
-  --   playerFire()
-  -- end
-
   gfx.sprite.update()
+  gfx.setDrawOffset(0,cameraY)
 
-  -- gfx.setFont(font)
-  -- gfx.drawText('sprite count: '..#gfx.sprite.getAllSprites(), 2, 2)
-  -- gfx.drawText('max enemies: '..maxEnemies, 2, 16)
-  -- gfx.drawText('score: '..score, 2, 30)
+  if mode == "game" then
 
-  playdate.drawFPS(2, 224)
+    player.fuel -= 1
+    check_enemy_spawn()
+    if player.position.y < 50 then
+      city:setY(-240 - player.position.y + 50)
+      cameraY = 50-player.position.y
+    end
 
+  end
+
+  frameTimer.updateTimers()
 end
