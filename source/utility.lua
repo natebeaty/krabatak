@@ -28,3 +28,11 @@ function pad(string, length)
   if (#string == length) then return string end
   return "0"..pad(string, length-1)
 end
+
+-- mimic pico-8s del()
+function del(t, el)
+  local i = table.indexOfElement(t,el)
+  if i then
+    table.remove(t,i)
+  end
+end
