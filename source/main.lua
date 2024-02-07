@@ -113,7 +113,6 @@ setup()
 
 function playdate.update()
   gfx.sprite.update()
-  gfx.setDrawOffset(0,cameraY)
 
   if mode == "game" then
 
@@ -126,5 +125,6 @@ function playdate.update()
 
   end
 
+  gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
 end
