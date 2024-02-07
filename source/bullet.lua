@@ -1,8 +1,6 @@
 
-local gfx = playdate.graphics
-
-Bullet = {}
-Bullet.__index = Bullet
+local gfx <const> = playdate.graphics
+class("Bullet").extends(playdate.graphics.sprite)
 
 local bulletSize = 24
 local collisionSize = 3
@@ -12,11 +10,14 @@ local maxXPosition = 390
 local minYPosition = -230
 local maxYPosition = 230
 
-function Bullet:new()
-  local self = playdate.graphics.sprite:new()
+function Bullet:init()
+  Bullet.super.init(self)
 
   self:setSize(bulletSize, bulletSize)
   self:setCollideRect(bulletSize/2-collisionSize/2, bulletSize/2-collisionSize/2, collisionSize, collisionSize)
+  self:setGroups({1})
+  self:setCollidesWithGroups({1})
+  self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
 
   function self:setVelocity(dx, dy, facing)
     if dx==0 then self.dx=0 elseif dx<0 then self.dx=-bulletSize*2 else self.dx=bulletSize*2 end
@@ -32,8 +33,13 @@ function Bullet:new()
       local other = c[i].other
       if other:isa(Enemy) == true then
         other:die()
-        remove_enemy(self)
+        self:remove()
         score(10)
+      end
+      if other:isa(Block) == true then
+        other:hit()
+        remove_enemy(self)
+        self:remove()
       end
     end
 
@@ -54,10 +60,6 @@ function Bullet:new()
       gfx.drawLine(0, 0, bulletSize, bulletSize)
     end
     -- gfx.drawLine(bulletSize, bulletSize, self.dx*bulletSize, self.dy*bulletSize)
-  end
-
-  function self:collisionResponse(other)
-    return "overlap"
   end
 
   return self
