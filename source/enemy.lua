@@ -1,3 +1,4 @@
+import "lib/state"
 
 local gfx <const> = playdate.graphics
 
@@ -15,6 +16,17 @@ local minYPosition = -230
 local maxYPosition = 260
 
 local enemyImagesTable = gfx.imagetable.new("images/crabcat")
+local enemies = {}
+
+local gameState = State()
+gameState:subscribe("level", nil, function(old_value, new_value)
+  print("levelchange")
+  if old_value ~= new_value then
+    maxEnemies = level
+    print("maxenemies", maxEnemies)
+  end
+end)
+local maxEnemies = 1
 
 function Enemy:init(initialPosition)
   Enemy.super.init(self)
@@ -43,6 +55,15 @@ function Enemy:init(initialPosition)
   self.chompCoords = {}
 end
 
+function Enemy:checkSpawn()
+  -- print("check spawn", #enemies, maxEnemies)
+  if (#enemies < maxEnemies and rnd()>0.99) then
+    local enemy = Enemy(point.new(rnd(400), -cameraY))
+    enemy:addSprite()
+    add(enemies, enemy)
+  end
+end
+
 
 function Enemy:changeDirection(s)
   self.directionTimer.duration = math.random(50)+25
@@ -55,18 +76,18 @@ function Enemy:changeDirection(s)
   -- print("enemy changedirection", self.velocity)
 end
 
-
 function Enemy:die()
-  new_explosion(self.position.x, self.position.y)
-  remove_enemy(self)
+  animations:explosion(self.position.x, self.position.y)
+  del(enemies, self)
+  self:remove()
 end
-
 
 function Enemy:update()
   self.position += self.velocity
-  self:setImage(self.enemyImages:getImage(self.directionTimer.frame%5<3 and 1 or 2))
-  local x,y,c,l = self:moveWithCollisions(self.position)
+  self:setImage(self.enemyImages:getImage(self.stepTimer.frame < 3 and 1 or 2))
+  self:moveTo(self.position)
+  -- offscreen?
   if self.position.y > maxYPosition or self.position.x < minXPosition or self.position.x > maxXPosition or self.position.y < minYPosition then
-    remove_enemy(self)
+    self.position = point.new(rnd(400), -cameraY)
   end
 end

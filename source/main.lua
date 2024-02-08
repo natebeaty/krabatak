@@ -19,8 +19,6 @@ local frameTimer <const> = playdate.frameTimer
 local font <const> = gfx.font.new("images/font/Sasser-Slab-Bold")
 local point <const> = playdate.geometry.point
 
-local enemies = {}
-local maxEnemies = 5
 local cameraY = 0
 local shakeit = 0
 
@@ -80,18 +78,6 @@ function checkBuildingCollapse()
   building:checkBuildingCollapse()
 end
 
-function checkEnemySpawn()
-  if (#enemies < maxEnemies and rnd()>0.95) then
-    local enemy = Enemy(point.new(rnd(400), -cameraY))
-    enemy:addSprite()
-    add(enemies, enemy)
-  end
-end
-function remove_enemy(e)
-  del(enemies, e)
-  e:remove()
-end
-
 function setCameraY(y)
   y = y or -240
   cameraY = 0
@@ -117,7 +103,7 @@ function playdate.update()
   if mode == "game" then
 
     shakeItNow()
-    checkEnemySpawn()
+    Enemy:checkSpawn()
     if player.position.y < 120 then
       city:setY(-240 - player.position.y + 120)
       cameraY = 120-player.position.y
