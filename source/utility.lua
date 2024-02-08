@@ -1,20 +1,22 @@
 -- utility miscellany
 
-function math.clamp(a, min, max)
-  if min > max then
-    min, max = max, min
+local min, max, abs, random, ceil = math.min, math.max, math.abs, math.random, math.ceil
+
+local function clamp(a, b, c)
+  if b > c then
+    b, c = c, b
   end
-  return math.max(min, math.min(max, a))
+  return max(b, min(c, a))
 end
 
 -- clamp velocity to min/max if moving (returns 0 if 0, otherwise min/max honoring negatives)
-function minMaxVelocity(d,min,max)
-  return d == 0 and 0 or (d > 0 and 1 or -1) * math.clamp(math.abs(d), min, max)
+function minMaxVelocity(d,a,b)
+  return d == 0 and 0 or (d > 0 and 1 or -1) * clamp(abs(d), a, b)
 end
 
 --ensure min velocity, pos or neg
 function caplowVelocity(spd,minV)
-  if (spd~=0 and math.abs(spd)<minV) then
+  if (spd~=0 and abs(spd)<minV) then
     if spd<0 then spd=-minV else spd=minV end
   end
   return spd
@@ -22,7 +24,7 @@ end
 
 --ensure max velocity, pos or neg
 function capVelocity(spd,maxV)
-  if (math.abs(spd)>maxV) then
+  if (abs(spd)>maxV) then
     if spd<0 then spd=-maxV else spd=maxV end
   end
   return spd
@@ -32,7 +34,7 @@ end
 -- mimic pico-8s rnd()
 function rnd(n)
   n = n or 1
-  return (math.random(n)-1 + math.random(1000)/1000)
+  return (random(n)-1 + random(1000)/1000)
 end
 
 --zero pad a number
@@ -59,28 +61,17 @@ end
 -- Random Element in a table
 function table.random(t)
   if type(t)~="table" then return nil end
-  return t[math.ceil(math.random(#t))]
+  return t[ceil(random(#t))]
 end
+
 -- Call function for each array element
-function table.each( t, fn )
+function table.each(t, fn)
   if type(fn)~="function" then return end
   for _, e in pairs(t) do
     fn(e)
   end
 end
 
--- function normalize(float input)
--- {
---     float average      = (min + max) / 2;
---     float range        = (max - min) / 2;
---     float normalized_x = (input - average) / range;
---     return normalized_x;
--- }
--- double Normalize(val, valmin, valmax, min, max)
--- {
---     return (((val - valmin) / (valmax - valmin)) * (max - min)) + min;
--- }
-
-function normalize(val, max, min)
-  return (val - min) / (max - min) * 2 - 1
+function normalize(val, a, b)
+  return (val - b) / (a - b) * 2 - 1
 end
