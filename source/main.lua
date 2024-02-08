@@ -6,10 +6,22 @@ import "player"
 import "bullet"
 import "building"
 import "supply"
+import "train"
 import "enemy"
 import "animations"
 import "levels/city"
 -- import "level"
+
+-- groups
+-- player -> enemy,block,supply,balloon
+-- bullet -> enemy,block,supply,balloon
+-- enemy -> bullet,player,supply,balloon
+-- supply -> player,bullet,enemy
+-- balloon -> player,bullet,enemy,block
+--
+-- 1 = enemies, building
+-- 2 = broken blocks (no collisions)
+-- 3 = supply,balloon
 
 -- betterize random
 math.randomseed(playdate.getSecondsSinceEpoch())
@@ -19,8 +31,8 @@ local frameTimer <const> = playdate.frameTimer
 local font <const> = gfx.font.new("images/font/Sasser-Slab-Bold")
 local point <const> = playdate.geometry.point
 
-local cameraY = 0
-local shakeit = 0
+cameraY = 0
+shakeit = 0
 
 --ye olde screen rattle
 function shakeItNow()
@@ -36,9 +48,6 @@ function shakeItNow()
     shakeit = 0
   end
 end
-function setShake(x)
-  shakeit = x
-end
 
 function statusBar()
   local status = gfx.sprite:new()
@@ -49,7 +58,9 @@ function statusBar()
   status:setSize(400,25)
   status:add()
   function status:draw()
-    -- gfx.fillRect(0,0,400,25)
+    gfx.fillRect(0,0,400,25)
+    -- gfx.setColor(gfx.kColorWhite)
+    gfx.setImageDrawMode("NXOR")
     gfx.setFont(font)
     gfx.drawText("FUEL: "..math.ceil(player.fuel), 5, 5)
     gfx.drawTextAligned("SCORE: "..player.score, 200, 5, kTextAlignment.center)
@@ -63,10 +74,12 @@ end
 
 function setup()
   gameState = State()
+  gameState.level = 1
   player = Player()
   player:addSprite()
   city = City()
   supply = Supply()
+  train = Train()
   building = Building()
   building:makeBuildings()
   statusBar()
@@ -74,25 +87,10 @@ function setup()
   mode = "game"
 end
 
-function checkBuildingCollapse()
-  building:checkBuildingCollapse()
-end
-
 function setCameraY(y)
   y = y or -240
   cameraY = 0
   city:setY(y)
-end
-
-function player_respawn()
-  player:respawn()
-end
-function new_explosion(x,y)
-  animations:explosion(x,y)
-end
-
-function score(n)
-  player.score += n
 end
 
 setup()
@@ -104,10 +102,10 @@ function playdate.update()
 
     shakeItNow()
     Enemy:checkSpawn()
-    if player.position.y < 120 then
-      city:setY(-240 - player.position.y + 120)
-      cameraY = 120-player.position.y
-    end
+    -- if player.position.y < 120 then
+    --   city:setY(-240 - player.position.y + 120)
+    --   cameraY = 120-player.position.y
+    -- end
 
   end
 
