@@ -139,7 +139,7 @@ function AnimatedSprite:toggleAnimation()
 end
 
 ---Stop and reset the animation
----After calling `playAnimation` `defaulState` will be played
+---After calling `playAnimation` `defaultState` will be played
 function AnimatedSprite:stopAnimation()
 	self:pauseAnimation()
 	self.currentState = nil
