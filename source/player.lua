@@ -9,13 +9,14 @@ local point <const> = playdate.geometry.point
 local vector2D <const> = playdate.geometry.vector2D
 local min, max, abs, floor = math.min, math.max, math.abs, math.floor
 
+
 -- local maxVelocity = 5.4
 -- local minVelocity = 1.8
 -- local flyVelocity = 2.1
 -- local flyFriction = 0.95
 
 local maxVelocity = 9
-local minVelocity = 2
+local minVelocity = 3
 local flyAcceleration = 1.5
 local flyAccelerationNeutral = 0.75
 local flyFriction = 0.85
@@ -49,18 +50,17 @@ function Player:init()
 end
 
 function Player:die()
-  print("die", self.dying)
-  new_explosion(self.position.x, self.position.y)
+  animations:explosion(self.position.x, self.position.y)
   self.life -= 1
   self.dying = 1
   self.position = point.new(startX, startY)
   self.velocity = vector2D.new(0,0)
-  self.resetPlayerTimer = frameTimer.new(20, player_respawn)
-  print("died", self.dying)
+  self.resetPlayerTimer = frameTimer.new(20, function()
+    player:respawn()
+  end)
 end
 
 function Player:respawn()
-  print("respawn", self.dying)
   setCameraY()
   self.facing = N
   self.fuel = 999
@@ -78,9 +78,29 @@ function Player:update()
     return
   end
 
+  --switch between man/plane?
+  -- if self.mode=="man" and self.y<112 then
+  --   self.mode="plane"
+  --   self.x=4
+  --   self.y=102
+  --   self.dy=-1
+  --   self.box=self.boxplane
+  --   sfx(10)
+  -- elseif self.mode=="plane" and self.y>104 then
+  --   if self.x>16 then
+  --     self.die()
+  --   else
+  --     self.mode="man"
+  --     self.x=4
+  --     self.y=113
+  --     self.dy=0
+  --     self.box=p.boxman
+  --     sfx(10)
+  --   end
+  -- end
+
   local upPressed, downPressed, leftPressed, rightPressed = playdate.buttonIsPressed("UP"), playdate.buttonIsPressed("DOWN"), playdate.buttonIsPressed("LEFT"), playdate.buttonIsPressed("RIGHT")
   local nobuttonPressed = not upPressed and not downPressed and not leftPressed and not rightPressed
-
   if upPressed then
     if leftPressed then
       self.facing = NW
@@ -123,13 +143,9 @@ function Player:update()
     self:setCollideRect(10,10,20,20)
   end
 
-  self.velocity.x = self.velocity.x * flyFriction
-  self.velocity.y = self.velocity.y * flyFriction
-
   -- if no button pressed,
-  if nobuttonPressed then
-    if abs(self.velocity.x) < minVelocity or abs(self.velocity.y) < minVelocity then
-      -- print(self.velocity.x, self.velocity.y, self.facing==N)
+  if nobuttonPressed then -- and self.velocity ~= vector2D.new(0,0)
+    if (self.velocity.x~=0 and abs(self.velocity.x) < minVelocity) or (self.velocity.y~=0 and abs(self.velocity.y) < minVelocity) then
       if self.facing==N then self.velocity += vector2D.new(0,-flyAccelerationNeutral) end
       if self.facing==S then self.velocity += vector2D.new(0,flyAccelerationNeutral) end
       if self.facing==E then self.velocity += vector2D.new(flyAccelerationNeutral,0) end
@@ -139,20 +155,17 @@ function Player:update()
       if self.facing==SE then self.velocity += vector2D.new(flyAccelerationNeutral,flyAccelerationNeutral) end
       if self.facing==SW then self.velocity += vector2D.new(-flyAccelerationNeutral,flyAccelerationNeutral) end
     else
-      self.velocity.x = capVelocity(self.velocity.x, minVelocity)
-      self.velocity.y = capVelocity(self.velocity.y, minVelocity)
+      self.velocity.x = caplowVelocity(self.velocity.x, minVelocity)
+      self.velocity.y = caplowVelocity(self.velocity.y, minVelocity)
     end
   else
     -- clamp velocity to min/max if moving
     self.velocity.x = capVelocity(self.velocity.x, maxVelocity)
     self.velocity.y = capVelocity(self.velocity.y, maxVelocity)
-
-    -- self.velocity.x = minMaxVelocity(self.velocity.x, minVelocity, maxVelocity)
-    -- self.velocity.y = minMaxVelocity(self.velocity.y, minVelocity, maxVelocity)
   end
 
-  -- self.velocity.x = capVelocity(self.velocity.x,maxVelocity)
-  -- self.velocity.y = capVelocity(self.velocity.y,maxVelocity)
+  self.velocity.x = self.velocity.x * flyFriction
+  self.velocity.y = self.velocity.y * flyFriction
 
   -- fuel check
   if self.mode=="man" then
@@ -198,17 +211,28 @@ function Player:update()
   local x,y,c,l = self:moveWithCollisions(self.position)
   for i = 1, l do
     if self.dying then return end
-    local collision = c[i]
-    if collision.other:isa(Enemy) == true then
+    local other = c[i].other
+    if other:isa(Enemy) then
       self:die()
-      collision.other:die()
+      other:die()
     end
-    if collision.other:isa(Block) == true then
+    if other:isa(Block) then
       self:die()
-      collision.other:hit()
+      other:hit()
     end
   end
 
+end
+
+function Player:refuel()
+  self.fuel = 999
+end
+
+function Player:addScore(n)
+  player.score += n
+  if (player.score % 20==0) then
+    gameState.level += 1
+  end
 end
 
 -- shoot!

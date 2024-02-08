@@ -16,7 +16,7 @@ function Bullet:init()
   self:setSize(bulletSize, bulletSize)
   self:setCollideRect(bulletSize/2-collisionSize/2, bulletSize/2-collisionSize/2, collisionSize, collisionSize)
   self:setGroups({1})
-  self:setCollidesWithGroups({1})
+  self:setCollidesWithGroups({1,3})
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
 
   function self:setVelocity(dx, dy, facing)
@@ -27,18 +27,21 @@ function Bullet:init()
   end
 
   function self:update()
-    local x,y,c,n = self:moveWithCollisions(self.x + self.dx/2, self.y + self.dy/2)
+    local x,y,c,l = self:moveWithCollisions(self.x + self.dx/2, self.y + self.dy/2)
 
-    for i=1,n do
+    for i=1,l do
       local other = c[i].other
-      if other:isa(Enemy) == true then
+      if other:isa(Enemy) then
         other:die()
         self:remove()
-        score(10)
+        player:addScore(10)
       end
-      if other:isa(Block) == true then
+      if other:isa(Block) then
         other:hit()
-        remove_enemy(self)
+        self:remove()
+      end
+      if other:isa(Supply) or other.isBalloon then
+        other:die()
         self:remove()
       end
     end
