@@ -1,6 +1,7 @@
 import "CoreLibs/sprites"
 
 local gfx <const> = playdate.graphics
+local random = math.random
 
 class("Building").extends()
 class("Block").extends(gfx.sprite)
@@ -9,9 +10,10 @@ local blockImagesTable = gfx.imagetable.new("images/block")
 local blocksImagesTable = gfx.imagetable.new("images/block")
 assert(blockImagesTable)
 
-local COLUMN_WIDTH <const>, COLUMN_HEIGHT <const> = blockImagesTable:getImage(1):getSize()
-local MAX_BUILDINGS <const> = 6
-local MAX_COLUMNS <const> = math.floor(310 / COLUMN_WIDTH)
+local columnWidth <const>, columnHeight <const> = blockImagesTable:getImage(1):getSize()
+local maxBuildings <const> = 6
+local maxColumns <const> = math.floor(310 / columnWidth)
+local maxBuildingWidth <const> = 5
 
 function Building:init()
   self.buildings = {}
@@ -25,7 +27,7 @@ function Block:init(x,y)
 
   self.blockImages = blockImagesTable
   -- randomize window state
-  self:setImage(self.blockImages:getImage(math.random(4)))
+  self:setImage(self.blockImages:getImage(random(4)))
   self:setZIndex(900)
   self:setCollideRect(0, 0, self.blockImages:getImage(1):getSize())
   self:setGroups({1})
@@ -46,8 +48,8 @@ function Block:update()
     if self.collapsing > 15 then
       self:remove()
     end
-  elseif self.broken == nil and math.random(1000)>999 then
-    self:setImage(self.blockImages:getImage(math.random(4)))
+  elseif self.broken == nil and random(1000)>999 then
+    self:setImage(self.blockImages:getImage(random(4)))
   end
 end
 
@@ -55,14 +57,14 @@ function Block:hit()
   self.broken = true
   self:setGroups({2})
   -- random broken block sprite
-  self:setImage(self.blockImages:getImage(4 + math.random(4)))
-  checkBuildingCollapse()
+  self:setImage(self.blockImages:getImage(4 + random(4)))
+  building:checkBuildingCollapse()
 end
 
 function Block:collapse()
   self.collapsing = 1
   self:setGroups({2})
-  setShake(0.2)
+  shakeit = 0.2
 end
 
 --                          1
@@ -86,15 +88,15 @@ function Building:makeBuildings(maxHeight)
 
   local lastX = 1
   local totalColumns = 1
-  for i = 1, MAX_BUILDINGS do
-    if (totalColumns < MAX_COLUMNS) then
+  for i = 1, maxBuildings do
+    if (totalColumns < maxColumns) then
       local building = {
         height = math.random(maxHeight) + 3,
-        width = math.min(MAX_COLUMNS - totalColumns, math.random(4) + 3),
+        width = math.min(maxColumns - totalColumns, random(4) + maxBuildingWidth-3),
         floors = {},
         x = lastX
       }
-      local gap = math.random(2)+1
+      local gap = random(2)+1
       totalColumns += building.width + gap
       lastX = lastX + building.width + gap
       local lastFloorWidth = building.width
@@ -107,9 +109,9 @@ function Building:makeBuildings(maxHeight)
         }
 
         for x = 1, lastFloorWidth do
-          local buildingLeftX = 40 + building.x*COLUMN_WIDTH
-          local narrowingOffset = (building.width - lastFloorWidth)*COLUMN_WIDTH/2
-          local block = Block(buildingLeftX + narrowingOffset + x*COLUMN_WIDTH, 220 - n * COLUMN_HEIGHT)
+          local buildingLeftX = 40 + building.x*columnWidth
+          local narrowingOffset = (building.width - lastFloorWidth)*columnWidth/2
+          local block = Block(buildingLeftX + narrowingOffset + x*columnWidth, 218 - n * columnHeight)
           -- block.building = building
           block:addSprite()
           add(floor.blocks, block)

@@ -12,7 +12,7 @@ function Animations:explosion(x,y)
       name = "explode",
       loop = 1,
       tickStep = 2,
-      onAnimationEndEvent = function (self)
+      onAnimationEndEvent = function(self)
         self:remove()
       end
     }
