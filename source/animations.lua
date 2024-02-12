@@ -7,6 +7,7 @@ local explosionImages = gfx.imagetable.new("images/explosion")
 
 function Animations:explosion(x,y)
   local explosionAnimation = AnimatedSprite.new(explosionImages)
+  explosionAnimation:setZIndex(1100)
   explosionAnimation:setStates({
     {
       name = "explode",
