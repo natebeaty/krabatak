@@ -13,15 +13,17 @@ import "levels/city"
 -- import "level"
 
 -- groups
--- player -> enemy,block,supply,balloon
+-- player (1) -> enemy,block,supply,balloon
 -- bullet -> enemy,block,supply,balloon
 -- enemy -> bullet,player,supply,balloon
 -- supply -> player,bullet,enemy
 -- balloon -> player,bullet,enemy,block
 --
--- 1 = enemies, building
+-- 1 = player, enemies, building
 -- 2 = broken blocks (no collisions)
--- 3 = supply,balloon
+-- 3 = supply, balloon
+-- 4 = floor borders
+-- 5 = change man/plane trigger blocks
 
 -- betterize random
 math.randomseed(playdate.getSecondsSinceEpoch())
@@ -49,7 +51,8 @@ function shakeItNow()
   end
 end
 
-function statusBar()
+
+function setupStatusBar()
   local status = gfx.sprite:new()
   status:setIgnoresDrawOffset(true)
   status:setZIndex(1000)
@@ -57,6 +60,10 @@ function statusBar()
   status:setCenter(0, 0) -- set center point to left bottom
   status:setSize(400,25)
   status:add()
+  function status:update()
+    -- fuel update area
+    self.addDirtyRect(0, 0, 125, 25)
+  end
   function status:draw()
     gfx.fillRect(0,0,400,25)
     -- gfx.setColor(gfx.kColorWhite)
@@ -82,7 +89,7 @@ function setup()
   train = Train()
   building = Building()
   building:makeBuildings()
-  statusBar()
+  statusBar = setupStatusBar()
   animations = Animations()
   mode = "game"
 end
@@ -101,7 +108,7 @@ function playdate.update()
   if mode == "game" then
 
     shakeItNow()
-    Enemy:checkSpawn()
+    Crab:checkSpawn()
     -- if player.position.y < 120 then
     --   city:setY(-240 - player.position.y + 120)
     --   cameraY = 120-player.position.y
@@ -111,4 +118,6 @@ function playdate.update()
 
   gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
+  -- playdate.drawFPS(2, 224)
+
 end
