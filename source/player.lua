@@ -1,5 +1,4 @@
 import "CoreLibs/animation"
-import "lib/state"
 
 local gfx <const> = playdate.graphics
 class("Player").extends(gfx.sprite)
@@ -8,64 +7,71 @@ local frameTimer <const> = playdate.frameTimer
 local point <const> = playdate.geometry.point
 local vector2D <const> = playdate.geometry.vector2D
 local min, max, abs, floor = math.min, math.max, math.abs, math.floor
+local screenWidth <const>, _ = playdate.display.getSize()
 
-
--- local maxVelocity = 5.4
--- local minVelocity = 1.8
--- local flyVelocity = 2.1
--- local flyFriction = 0.95
-
-local maxVelocity = 9
-local minVelocity = 3
-local flyAcceleration = 1.5
-local flyAccelerationNeutral = 0.75
-local flyFriction = 0.85
+local planeMinVelocity = 3
+local planeMaxVelocity = 9
+local manMinVelocity = 0
+local manMaxVelocity = 3
+local planeAcceleration = 1.5
+local planeAccelerationNeutral = 0.75
+local planeFriction = 0.85
+local manFriction = 0.55
 local NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9 -- plane sprite indexes
-local startX = 15
-local startY = 182
+local planeStartY = 186
+local manStartY = 213
+local leftStartX = 15 -- left dock X
+local rightStartX = 384 -- right dock X
 local minXPosition = 10
 local maxXPosition = 390
-local minYPosition = -230
+local minYPosition = 33
 local maxYPosition = 230
-local playerImages = gfx.imagetable.new("images/player")
+local planeImages = gfx.imagetable.new("images/plane")
+local manImages = gfx.imagetable.new("images/man")
 
 function Player:init()
   Player.super.init(self)
   self.facing = N
-  self:setImage(playerImages:getImage(self.facing))
+  self:setImage(planeImages:getImage(self.facing))
   self:setZIndex(1000)
-  self:moveTo(startX, startY)
-  self:setCollideRect(5,5,30,30)
+  self:setCollideRect(22,22,10,14)
+  -- self:setCollideRect(5,5,30,30)
   self:setGroups({1})
-  self:setCollidesWithGroups({1})
-  self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+  self:setCollidesWithGroups({1,3})
+  self:setCollideRect(13,11,6,10)
+  -- self.collisionResponse = gfx.sprite.kCollisionTypeFreeze
 
+  self.mode = "man"
   self.life = 3
   self.score = 10
   self.fuel = 999
-  self.position = point.new(startX, startY)
-  self.mode = "plane"
+  self.position = point.new(leftStartX, manStartY)
   self.exploding = false
   self.velocity = vector2D.new(0,0)
+  self:moveTo(self.position)
 end
 
 function Player:die()
   animations:explosion(self.position.x, self.position.y)
   self.life -= 1
   self.dying = 1
-  self.position = point.new(startX, startY)
+  self.mode = "man"
+  self.position = point.new(leftStartX, manStartY)
   self.velocity = vector2D.new(0,0)
+  self:setCollideRect(13,11,6,10)
   self.resetPlayerTimer = frameTimer.new(20, function()
     player:respawn()
   end)
+  statusBar:markDirty()
 end
 
 function Player:respawn()
   setCameraY()
   self.facing = N
   self.fuel = 999
-  self:setImage(playerImages:getImage(self.facing))
-  self.position = point.new(startX, startY)
+  self:setImage(planeImages:getImage(self.facing))
+  self.position = point.new(leftStartX, manStartY)
+  self:moveTo(self.position)
   self.velocity = vector2D.new(0,0)
   self.dying = nil
 end
@@ -78,26 +84,16 @@ function Player:update()
     return
   end
 
-  --switch between man/plane?
-  -- if self.mode=="man" and self.y<112 then
-  --   self.mode="plane"
-  --   self.x=4
-  --   self.y=102
-  --   self.dy=-1
-  --   self.box=self.boxplane
-  --   sfx(10)
-  -- elseif self.mode=="plane" and self.y>104 then
-  --   if self.x>16 then
-  --     self.die()
-  --   else
-  --     self.mode="man"
-  --     self.x=4
-  --     self.y=113
-  --     self.dy=0
-  --     self.box=p.boxman
-  --     sfx(10)
-  --   end
-  -- end
+  local minVelocity = planeMinVelocity
+  local maxVelocity = planeMaxVelocity
+  local friction = planeFriction
+
+  --man slow, plane fast
+  if self.mode=="man" then
+    minVelocity = manMinVelocity
+    maxVelocity = manMaxVelocity
+    friction = manFriction
+  end
 
   local upPressed, downPressed, leftPressed, rightPressed = playdate.buttonIsPressed("UP"), playdate.buttonIsPressed("DOWN"), playdate.buttonIsPressed("LEFT"), playdate.buttonIsPressed("RIGHT")
   local nobuttonPressed = not upPressed and not downPressed and not leftPressed and not rightPressed
@@ -110,7 +106,7 @@ function Player:update()
       self.facing = N
       self.velocity.x = 0
     end
-    self.velocity.y = self.velocity.y - flyAcceleration
+    self.velocity.y = self.velocity.y - planeAcceleration
   elseif downPressed then
     if leftPressed then
       self.facing = SW
@@ -120,7 +116,7 @@ function Player:update()
       self.facing = S
       self.velocity.x = 0
     end
-    self.velocity.y = self.velocity.y + flyAcceleration
+    self.velocity.y = self.velocity.y + planeAcceleration
   end
 
   if leftPressed then
@@ -128,53 +124,59 @@ function Player:update()
       self.velocity.y = 0
       self.facing = W
     end
-    self.velocity.x = self.velocity.x - flyAcceleration
+    self.velocity.x = self.velocity.x - planeAcceleration
   elseif rightPressed then
     if not upPressed and not downPressed then
       self.facing = E
       self.velocity.y = 0
     end
-    self.velocity.x = self.velocity.x + flyAcceleration
+    self.velocity.x = self.velocity.x + planeAcceleration
   end
 
-  if self.facing == E or self.facing == W then
-    self:setCollideRect(8,15,25,10)
-  else
-    self:setCollideRect(10,10,20,20)
-  end
-
-  -- if no button pressed,
-  if nobuttonPressed then -- and self.velocity ~= vector2D.new(0,0)
-    if (self.velocity.x~=0 and abs(self.velocity.x) < minVelocity) or (self.velocity.y~=0 and abs(self.velocity.y) < minVelocity) then
-      if self.facing==N then self.velocity += vector2D.new(0,-flyAccelerationNeutral) end
-      if self.facing==S then self.velocity += vector2D.new(0,flyAccelerationNeutral) end
-      if self.facing==E then self.velocity += vector2D.new(flyAccelerationNeutral,0) end
-      if self.facing==W then self.velocity += vector2D.new(-flyAccelerationNeutral,0) end
-      if self.facing==NE then self.velocity += vector2D.new(flyAccelerationNeutral,-flyAccelerationNeutral) end
-      if self.facing==NW then self.velocity += vector2D.new(-flyAccelerationNeutral,-flyAccelerationNeutral) end
-      if self.facing==SE then self.velocity += vector2D.new(flyAccelerationNeutral,flyAccelerationNeutral) end
-      if self.facing==SW then self.velocity += vector2D.new(-flyAccelerationNeutral,flyAccelerationNeutral) end
+  -- set collision based on mode
+  if self.mode == "plane" then
+    if self.facing == E or self.facing == W then
+      self:setCollideRect(8,15,25,10)
     else
-      self.velocity.x = caplowVelocity(self.velocity.x, minVelocity)
-      self.velocity.y = caplowVelocity(self.velocity.y, minVelocity)
+      self:setCollideRect(10,10,20,20)
+    end
+  end
+
+  -- if no button pressed
+  if nobuttonPressed then
+    if self.mode=="plane" then
+      if (self.velocity.x~=0 and abs(self.velocity.x) < minVelocity) or (self.velocity.y~=0 and abs(self.velocity.y) < minVelocity) then
+        if self.facing==N then self.velocity += vector2D.new(0,-planeAccelerationNeutral) end
+        if self.facing==S then self.velocity += vector2D.new(0,planeAccelerationNeutral) end
+        if self.facing==E then self.velocity += vector2D.new(planeAccelerationNeutral,0) end
+        if self.facing==W then self.velocity += vector2D.new(-planeAccelerationNeutral,0) end
+        if self.facing==NE then self.velocity += vector2D.new(planeAccelerationNeutral,-planeAccelerationNeutral) end
+        if self.facing==NW then self.velocity += vector2D.new(-planeAccelerationNeutral,-planeAccelerationNeutral) end
+        if self.facing==SE then self.velocity += vector2D.new(planeAccelerationNeutral,planeAccelerationNeutral) end
+        if self.facing==SW then self.velocity += vector2D.new(-planeAccelerationNeutral,planeAccelerationNeutral) end
+      else
+        self.velocity.x = caplowVelocity(self.velocity.x, minVelocity)
+        self.velocity.y = caplowVelocity(self.velocity.y, minVelocity)
+      end
     end
   else
     -- clamp velocity to min/max if moving
     self.velocity.x = capVelocity(self.velocity.x, maxVelocity)
     self.velocity.y = capVelocity(self.velocity.y, maxVelocity)
+    -- print(self.velocity.x, maxVelocity)
   end
 
-  self.velocity.x = self.velocity.x * flyFriction
-  self.velocity.y = self.velocity.y * flyFriction
+  self.velocity.x = self.velocity.x * friction
+  self.velocity.y = self.velocity.y * friction
 
   -- fuel check
   if self.mode=="man" then
-    -- manfuel
-    self.fuel-=0.1
+    self.fuel -= 0.1
   else
-    --planefuel (empties faster based on velocity)
-    if (self.velocity.y~=0 or self.velocity.x~=0) then self.fuel-=(abs(self.velocity.x)+abs(self.velocity.y))*0.1 else self.fuel-=0.1 end
+    -- plane fuel empties faster based on velocity
+    if (self.velocity.y~=0 or self.velocity.x~=0) then self.fuel -= (abs(self.velocity.x)+abs(self.velocity.y))*0.1 else self.fuel -= 0.1 end
   end
+
   --low fuel klaxon
   -- if (self.fuel < self.lowfuel and t%40==0) sfx(13)
   self.fuel = math.max(self.fuel,0)
@@ -206,15 +208,27 @@ function Player:update()
   end
 
   -- set player sprite based on direction
-  self:setImage(playerImages:getImage(self.facing))
+  if self.mode=="plane" then
+    self:setImage(planeImages:getImage(self.facing))
+  else
+    self:setImage(manImages:getImage(self.facing))
+  end
 
   local x,y,c,l = self:moveWithCollisions(self.position)
+  self.position = point.new(x,y)
+
   for i = 1, l do
-    if self.dying then return end
     local other = c[i].other
-    if other:isa(Enemy) then
+    if other.flag and other.flag=="playerModeSwitch" then
+      self:switchMode()
+    elseif other.isEnemy then
       self:die()
       other:die()
+    elseif other:isa(Supply) then
+      self:die()
+      other:die()
+    elseif other:isa(Train) then
+      self:die()
     end
     if other:isa(Block) then
       self:die()
@@ -225,13 +239,44 @@ function Player:update()
 end
 
 function Player:refuel()
-  self.fuel = 999
+  self.fuel = min(self.fuel + 400, 999)
 end
 
 function Player:addScore(n)
   player.score += n
   if (player.score % 20==0) then
     gameState.level += 1
+  end
+  statusBar:markDirty()
+end
+
+function Player:switchMode()
+  local startX = self.position.x < 50 and leftStartX or rightStartX
+  --switch between man/plane?
+  if self.mode=="man" then
+    self.mode="plane"
+    self.position = point.new(startX, planeStartY)
+    self.velocity = vector2D.new(0, -planeMinVelocity)
+    self.facing = N
+    self:moveTo(self.position)
+    self:setImage(planeImages:getImage(self.facing))
+    -- sfx(10)
+  elseif self.mode=="plane" then
+    self.mode="man"
+    self.position = point.new(startX, manStartY)
+    self.velocity = vector2D.new(0, 0)
+    self:setCollideRect(13,11,6,10)
+    self:moveTo(self.position)
+    self:setImage(manImages:getImage(self.facing))
+    -- sfx(10)
+  end
+end
+
+function Player:collisionResponse(other)
+  if other.isBalloon or (other.flag and other.flag == "playerModeSwitch") then
+    return "overlap"
+  else
+    return "freeze"
   end
 end
 
@@ -242,21 +287,22 @@ function Player:shoot()
     -- sfx(00)
     local bulletVelocity = nil
 
-    if self.facing==N then bulletVelocity = vector2D.new(0,-flyAccelerationNeutral) end
-    if self.facing==S then bulletVelocity = vector2D.new(0,flyAccelerationNeutral) end
-    if self.facing==E then bulletVelocity = vector2D.new(flyAccelerationNeutral,0) end
-    if self.facing==W then bulletVelocity = vector2D.new(-flyAccelerationNeutral,0) end
-    if self.facing==NE then bulletVelocity = vector2D.new(flyAccelerationNeutral,-flyAccelerationNeutral) end
-    if self.facing==NW then bulletVelocity = vector2D.new(-flyAccelerationNeutral,-flyAccelerationNeutral) end
-    if self.facing==SE then bulletVelocity = vector2D.new(flyAccelerationNeutral,flyAccelerationNeutral) end
-    if self.facing==SW then bulletVelocity = vector2D.new(-flyAccelerationNeutral,flyAccelerationNeutral) end
+    if self.facing==N then bulletVelocity = vector2D.new(0,-planeAccelerationNeutral) end
+    if self.facing==S then bulletVelocity = vector2D.new(0,planeAccelerationNeutral) end
+    if self.facing==E then bulletVelocity = vector2D.new(planeAccelerationNeutral,0) end
+    if self.facing==W then bulletVelocity = vector2D.new(-planeAccelerationNeutral,0) end
+    if self.facing==NE then bulletVelocity = vector2D.new(planeAccelerationNeutral,-planeAccelerationNeutral) end
+    if self.facing==NW then bulletVelocity = vector2D.new(-planeAccelerationNeutral,-planeAccelerationNeutral) end
+    if self.facing==SE then bulletVelocity = vector2D.new(planeAccelerationNeutral,planeAccelerationNeutral) end
+    if self.facing==SW then bulletVelocity = vector2D.new(-planeAccelerationNeutral,planeAccelerationNeutral) end
 
     -- support for quick turn and shoots when direction doesn't match flipx/flipy
     -- if self.velocity.y==0 and ((self.facing == W and self.velocity.x > 0) or (self.facing == E and self.velocity.x < 0)) then vx=self.velocity.x*-1 end
     -- if self.velocity.x==0 and ((self.facing == N and self.velocity.y<0) or (self.facing == S and self.velocity.y>0)) then vy=self.velocity.y*-1 end
 
-    local b = Bullet()
-    b:moveTo(self.position.x+bulletVelocity.x*20, self.position.y+bulletVelocity.y*20)
+    local bulletSize = self.mode=="man" and 12 or 24
+    local b = Bullet(bulletSize)
+    b:moveTo(self.position.x + bulletVelocity.x * 20, self.position.y + bulletVelocity.y * 20)
     b:setVelocity(bulletVelocity.x, bulletVelocity.y, self.facing)
     b:addSprite()
 
