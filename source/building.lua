@@ -32,7 +32,7 @@ function Block:init(x,y)
   self:setCollideRect(0, 0, self.blockImages:getImage(1):getSize())
   self:setGroups({1})
   self:setCollidesWithGroups({1})
-  self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+  -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
   self.x = x
   self.y = y
   self:moveTo(x,y)
@@ -111,7 +111,7 @@ function Building:makeBuildings(maxHeight)
         for x = 1, lastFloorWidth do
           local buildingLeftX = 40 + building.x*columnWidth
           local narrowingOffset = (building.width - lastFloorWidth)*columnWidth/2
-          local block = Block(buildingLeftX + narrowingOffset + x*columnWidth, 218 - n * columnHeight)
+          local block = Block(buildingLeftX + narrowingOffset + x*columnWidth, 224 - n * columnHeight)
           -- block.building = building
           block:addSprite()
           add(floor.blocks, block)
