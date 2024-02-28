@@ -16,7 +16,6 @@ local yPosition = 231
 
 local trainImagesTable = gfx.imagetable.new("images/train")
 
-local gameState = State()
 local screenWidth <const>, _ = playdate.display.getSize()
 
 function Train:init()
