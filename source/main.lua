@@ -32,9 +32,14 @@ local gfx <const> = playdate.graphics
 local frameTimer <const> = playdate.frameTimer
 local font <const> = gfx.font.new("images/font/Sasser-Slab-Bold")
 local point <const> = playdate.geometry.point
+local titleGfx = gfx.image.new("images/title")
+local gameOverGfx = gfx.image.new("images/game-over")
+local blinkTimer = frameTimer.new(6)
+blinkTimer.repeats = true
 
 cameraY = 0
 shakeit = 0
+blinkyBuildings = nil
 
 --ye olde screen rattle
 function shakeItNow()
@@ -102,17 +107,49 @@ end
 
 setup()
 
+-- big ol' update loop
 function playdate.update()
   gfx.sprite.update()
 
-  if mode == "game" then
+  if mode == "title" then
+
+    titleGfx:draw(100, 40)
+    if playdate.buttonJustPressed("A") then
+      mode = "game"
+    end
+
+  elseif mode == "game" then
 
     shakeItNow()
     Crab:checkSpawn()
-    -- if player.position.y < 120 then
-    --   city:setY(-240 - player.position.y + 120)
-    --   cameraY = 120-player.position.y
-    -- end
+
+    if verticalScroll and player.position.y < 120 then
+      city:setY(-240 - player.position.y + 120)
+      cameraY = 120-player.position.y
+    end
+
+  elseif mode == "game_over" then
+
+    gameOverGfx:draw(150, 40)
+    if playdate.buttonJustPressed("A") then
+      restart()
+    end
+
+  elseif mode == "bonus" then
+
+    gfx.drawTextAligned("LEVEL "..level.." COMPLETE", 200, 50, kTextAlignment.center)
+
+    -- tally bonus points
+    if (building:checkBonus()) then
+      if blinkTimer.frame < 3 then
+        gfx.drawTextAligned("BONUS POINTS", 200, 75, kTextAlignment.center)
+      end
+    else
+      blinkyBuildings = 1
+      if playdate.buttonJustPressed("A") then
+        nextLevel()
+      end
+    end
 
   end
 

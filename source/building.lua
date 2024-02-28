@@ -15,6 +15,7 @@ local maxBuildings <const> = 6
 local maxColumns <const> = math.floor(310 / columnWidth)
 local maxBuildingWidth <const> = 5
 
+-- new building
 function Building:init()
   self.buildings = {}
   self.buildingcrash = {}
@@ -22,17 +23,18 @@ function Building:init()
   self.peopleleft = 2
 end
 
+-- new block
 function Block:init(x,y)
   Block.super.init(self)
 
   self.blockImages = blockImagesTable
   -- randomize window state
-  self:setImage(self.blockImages:getImage(random(4)))
+  self:setImage(self.blockImages:getImage(random(5)))
   self:setZIndex(900)
   self:setCollideRect(0, 0, self.blockImages:getImage(1):getSize())
   self:setGroups({1})
   self:setCollidesWithGroups({1})
-  -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+  -- self.collisionpΩResponse = gfx.sprite.kCollisionTypeOverlap
   self.x = x
   self.y = y
   self:moveTo(x,y)
@@ -41,29 +43,39 @@ function Block:init(x,y)
   -- self.broken = 0
 end
 
+-- block update loop
 function Block:update()
+  -- collapsing?
   if self.collapsing ~= nil then
     self:setImage(self.blockImages:getImage(8 + self.collapsing % 5))
     self.collapsing = self.collapsing + 1
     if self.collapsing > 15 then
       self:remove()
     end
-  elseif self.broken == nil and random(1000)>999 then
-    self:setImage(self.blockImages:getImage(random(4)))
+  elseif self.broken == nil and ((blinkyBuildings ~= nil and random(100)>80) or random(1000)>999) then
+    -- blink lights?
+    if blinkyBuildings then
+      self:setImage(self.blockImages:getImage(rnd() > 0.5 and 1 or 5))
+    else
+      self:setImage(self.blockImages:getImage(random(5)))
+    end
   end
 end
 
+-- block was hit by object
 function Block:hit()
   self.broken = true
   self:setGroups({2})
   -- random broken block sprite
-  self:setImage(self.blockImages:getImage(4 + random(4)))
+  self:setImage(self.blockImages:getImage(5 + random(4)))
   building:checkBuildingCollapse()
 end
 
+-- mark block as collapsing
 function Block:collapse()
   self.collapsing = 1
   self:setGroups({2})
+  -- trigger screen shake
   shakeit = 0.2
 end
 
@@ -125,8 +137,7 @@ function Building:makeBuildings(maxHeight)
   end
 end
 
-
--- check for any building rows with all damage
+-- check for any building rows with all damaged blocks
 function Building:checkBuildingCollapse()
   for b = 1, #self.buildings do
     local buildingCollapsing = nil
@@ -155,88 +166,44 @@ function Building:checkBuildingCollapse()
   return chk
 end
 
-
-
--- buildings
-
---[[
-
--- randomly blink building lights
-function building_blink(chk)
-  if t%chk==0 then
-    -- blink undamaged building lights
-    for i=1,#buildings do
-      for h=1,buildings[i].height do
-        for w=1,buildings[i].width do
-          local mx=buildings[i].x+w
-          local my=13-buildings[i].height+h
-          local map_sprite=mget(mx,my)
-          if (chk==1 or rnd()>0.98) and fget(map_sprite,1) and not fget(map_sprite,2) then
-            mset(mx,my,flr(rnd(5))+1)
-          end
+-- find next good block and set bonus
+function Building:checkBonus()
+  for b = 1, #self.buildings do
+    for i = 1, self.buildings[b].height do
+      for j=1, self.buildings[b].floors[i].width do
+        local block = self.buildings[b].floors[i].blocks[j]
+        if block.broken == nil and block.bonused == nil then
+          block.bonused = true
+          player:addScore(10)
+          block:setImage(block.blockImages:getImage(1))
+          animations:bonusYay(block.x, block.y)
+          return true
         end
       end
     end
   end
+  return false
 end
 
--- row to collapse
-function new_rumblingrow(x,y,delay)
-  local obj={x=x,y=y,delay=delay,t=0}
-  obj.update=function(this)
-    this.t+=1
-    shakeit=0.05
-    if (this.t > this.delay+15) then
-      del(rumblingrows,this)
-      camera(0,0)
-    end
-  end
-  obj.draw=function(this)
-    local sprite=24
-    if (this.t>this.delay+6) then
-      if this.t%3<2 then sprite=26 else sprite=27 end
-    elseif (this.t>this.delay+3) then
-      if this.t%3<2 then sprite=24 else sprite=25 end
-    else
-      if this.t%3<2 then sprite=22 else sprite=23 end
-    end
-    pset(this.x+rnd(10)-1,this.y+rnd(10)-1,1)
-    pset(this.x+rnd(10)-1,this.y+rnd(10)-1,10)
-    spr(sprite,this.x,this.y)
-  end
-  return obj
-end
-
--- building update loop
-function building_update()
-  if #buildingcrash>0 then
-    for obj in all(buildingcrash) do
-      for i=1,obj.rowbusted do
-        sfx(11)
-        for j=1,obj.building.width do
-          local mx=obj.building.x+j
-          local my=13-obj.building.height+i
-          mset(mx,my,8)
-          add(rumblingrows,new_rumblingrow(mx*8,my*8,i*6))
-        end
-        -- any undamaged brick left?
-        peopleleft-=obj.building.width
-      end
-      -- shorten building height
-      obj.building.height-=obj.rowbusted
-    end
-    -- you killed picoville!
-    if peopleleft<=0 then
-      -- reset timer
-      t=0
-      if mode=="game" then
-        game_over()
+-- find next good block and set bonus
+function Building:resetBonus()
+  for b = 1, #self.buildings do
+    for i = 1, self.buildings[b].height do
+      for j=1, self.buildings[b].floors[i].width do
+        self.buildings[b].floors[i].blocks[j].bonused = nil
       end
     end
-    buildingcrash={}
   end
-  -- restart title stage if all buildings are destroyed
-  if (t>150 and peopleleft<=0 and mode!="game") restart()
 end
 
-]]--
+-- clear all building blocks
+function Building:reset()
+  blinkyBuildings = nil
+  for b = 1, #self.buildings do
+    for i = 1, self.buildings[b].height do
+      for j=1, self.buildings[b].floors[i].width do
+        self.buildings[b].floors[i].blocks[j]:remove()
+      end
+    end
+  end
+end
