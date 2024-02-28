@@ -23,34 +23,35 @@ local manStartY = 213
 local leftStartX = 15 -- left dock X
 local rightStartX = 384 -- right dock X
 local minXPosition = 10
-local maxXPosition = 390
 local minYPosition = 33
+if verticalScroll then
+  minYPosition = -160
+end
+local maxXPosition = 390
 local maxYPosition = 230
 local planeImages = gfx.imagetable.new("images/plane")
 local manImages = gfx.imagetable.new("images/man")
+local platformManImages = gfx.imagetable.new("images/platform-man")
 
+-- player init
 function Player:init()
   Player.super.init(self)
   self.facing = N
   self:setImage(planeImages:getImage(self.facing))
   self:setZIndex(1000)
-  self:setCollideRect(22,22,10,14)
-  -- self:setCollideRect(5,5,30,30)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
   self:setCollideRect(13,11,6,10)
-  -- self.collisionResponse = gfx.sprite.kCollisionTypeFreeze
-
-  self.mode = "man"
-  self.life = 3
-  self.score = 10
-  self.fuel = 999
-  self.position = point.new(leftStartX, manStartY)
-  self.exploding = false
-  self.velocity = vector2D.new(0,0)
-  self:moveTo(self.position)
+  -- set initial attributes
+  self:restart()
 end
 
+function drawPlane()
+  -- draw static plane
+  planeImages:drawImage(N,10,10)
+end
+
+-- player has died
 function Player:die()
   animations:explosion(self.position.x, self.position.y)
   self.life -= 1
@@ -63,12 +64,17 @@ function Player:die()
     player:respawn()
   end)
   statusBar:markDirty()
+  if self.life == 0 then
+    gameOver()
+  end
 end
 
+-- respawn player after dying
 function Player:respawn()
   setCameraY()
   self.facing = N
   self.fuel = 999
+  -- move player to starting point
   self:setImage(planeImages:getImage(self.facing))
   self.position = point.new(leftStartX, manStartY)
   self:moveTo(self.position)
@@ -76,9 +82,24 @@ function Player:respawn()
   self.dying = nil
 end
 
+-- restart player attributes for new game
+function Player:restart()
+  self.mode = "man"
+  self:setCollideRect(13,11,6,10)
+  self.life = 3
+  self.score = 0
+  self.extralife = 0
+  self.fuel = 999
+  self.position = point.new(leftStartX, manStartY)
+  self.exploding = false
+  self.velocity = vector2D.new(0,0)
+  self:moveTo(self.position)
+end
 
+-- player update loop
 function Player:update()
-  if self.dying ~= nil then
+  -- dying?
+  if mode ~= "game" or self.dying ~= nil then
     self:setImage(nil)
     self:moveTo(self.position)
     return
@@ -211,6 +232,7 @@ function Player:update()
   if self.mode=="plane" then
     self:setImage(planeImages:getImage(self.facing))
   else
+    drawPlane()
     self:setImage(manImages:getImage(self.facing))
   end
 
@@ -244,9 +266,17 @@ end
 
 function Player:addScore(n)
   player.score += n
-  if (player.score % 20==0) then
-    gameState.level += 1
+
+  -- extra life?
+  self.extralife += n
+  if self.extralife >= 1000 then
+    self.extralife = 0
+    if (self.life < 5) then
+      -- sfx(15)
+      self.life += 1
+    end
   end
+
   statusBar:markDirty()
 end
 
