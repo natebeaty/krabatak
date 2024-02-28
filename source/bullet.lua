@@ -52,17 +52,23 @@ function Bullet:init(bulletSize)
   end
 
   function self:draw()
-    gfx.setLineWidth(2)
     if self.facing == E or self.facing == W then
-      gfx.drawLine(0, self.bulletSize/2, self.bulletSize, self.bulletSize/2)
+      x1, y1, x2, y2 = 0, self.bulletSize/2, self.bulletSize, self.bulletSize/2
     elseif self.facing == N or self.facing == S then
-      gfx.drawLine(self.bulletSize/2, 0, self.bulletSize/2, self.bulletSize)
+      x1, y1, x2, y2 = self.bulletSize/2, 0, self.bulletSize/2, self.bulletSize
     elseif self.facing == NE or self.facing == SW then
-      gfx.drawLine(0, self.bulletSize, self.bulletSize, 0)
+      x1, y1, x2, y2 = 0, self.bulletSize, self.bulletSize, 0
     elseif self.facing == SE or self.facing == NW then
-      gfx.drawLine(0, 0, self.bulletSize, self.bulletSize)
+      x1, y1, x2, y2 = 0, 0, self.bulletSize, self.bulletSize
     end
-    -- gfx.drawLine(self.bulletSize, self.bulletSize, self.dx*self.bulletSize, self.dy*self.bulletSize)
+    -- x1, y1, x2, y2 = self.bulletSize, self.bulletSize, self.dx*self.bulletSize, self.dy*self.bulletSize
+
+    gfx.setColor(gfx.kColorWhite)
+    gfx.setLineWidth(2)
+    gfx.drawLine(x1, y1-1, x2, y2-1)
+    gfx.drawLine(x1, y1+1, x2, y2+1)
+    gfx.setColor(gfx.kColorBlack)
+    gfx.drawLine(x1, y1, x2, y2)
   end
 
   return self

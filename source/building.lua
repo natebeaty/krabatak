@@ -151,7 +151,6 @@ function Building:checkBuildingCollapse()
         end
       end
       if rowbusted then
-        print("rowbusted", i)
         buildingCollapsing = buildingCollapsing or i-1
         -- mark all blocks in broken row as collapsing
         for j=1, self.buildings[b].floors[i].width do
@@ -161,12 +160,11 @@ function Building:checkBuildingCollapse()
     end
     -- reduce building height
     self.buildings[b].height = buildingCollapsing or self.buildings[b].height
-    -- print("bh", self.buildings[b].height, buildingCollapsing)
   end
   return chk
 end
 
--- find next good block and set bonus
+-- bonus count: find next good block and set bonus
 function Building:checkBonus()
   for b = 1, #self.buildings do
     for i = 1, self.buildings[b].height do
