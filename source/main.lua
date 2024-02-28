@@ -1,6 +1,7 @@
+import "CoreLibs/timer"
 import "CoreLibs/frameTimer"
 import "CoreLibs/graphics"
-import "lib/state"
+import "CoreLibs/easing"
 import "utility"
 import "player"
 import "bullet"
@@ -37,26 +38,30 @@ local gameOverGfx = gfx.image.new("images/game-over")
 local blinkTimer = frameTimer.new(6)
 blinkTimer.repeats = true
 
+gfx.setFont(font)
+verticalScroll = false
+
 cameraY = 0
 shakeit = 0
+hiscore = 0
 blinkyBuildings = nil
 
 --ye olde screen rattle
 function shakeItNow()
   local fade = 0.95
-  local offset_x=16-rnd(32)
-  local offset_y=16-rnd(32)
-  offset_x*=shakeit
-  offset_y*=shakeit
+  local offsetX= 16-rnd(32)
+  local offsetY= 16-rnd(32)
+  offsetX *= shakeit
+  offsetY *= shakeit
 
-  playdate.display.setOffset(offset_x, offset_y)
+  playdate.display.setOffset(offsetX, offsetY)
   shakeit *= fade
   if shakeit < 0.05 then
     shakeit = 0
   end
 end
 
-
+-- Status bar on top with fuel, score, lives
 function setupStatusBar()
   local status = gfx.sprite:new()
   status:setIgnoresDrawOffset(true)
@@ -73,20 +78,21 @@ function setupStatusBar()
     gfx.fillRect(0,0,400,25)
     -- gfx.setColor(gfx.kColorWhite)
     gfx.setImageDrawMode("NXOR")
-    gfx.setFont(font)
     gfx.drawText("FUEL: "..math.ceil(player.fuel), 5, 5)
     gfx.drawTextAligned("SCORE: "..player.score, 200, 5, kTextAlignment.center)
     local heart = gfx.image.new("images/heart")
     for i=1,player.life do
       heart:draw(395-i*15,6)
     end
+    gfx.setImageDrawMode("copy")
   end
   return status
 end
 
+-- Initial setup
 function setup()
-  gameState = State()
-  gameState.level = 1
+  level = 1
+  enemiesKilled = 0
   player = Player()
   player:addSprite()
   city = City()
@@ -96,9 +102,61 @@ function setup()
   building:makeBuildings()
   statusBar = setupStatusBar()
   animations = Animations()
+  mode = "title"
+end
+
+-- game over, man!
+function gameOver()
+  mode = "game_over"
+  blinkyBuildings = 1
+  hiscore = math.max(hiscore, player.score)
+  -- dset(0,hiscore) --record hiscore in cartdata
+  level = 1
+  -- sfx(04)
+end
+
+-- enemy killed, check level progress
+function checkLevel()
+  enemiesKilled += 1
+  if enemiesKilled >= 2 + 16*(level-1) then
+    levelFinished()
+  end
+end
+
+-- level done!
+function levelFinished()
+  -- need to clean anything up? reset player?
+  mode = "bonus"
+end
+
+function nextLevel()
+  emptyStage()
+  blinkyBuildings = nil
+  level += 1
+  Enemy:setMax(level * 2)
+  player:respawn()
   mode = "game"
 end
 
+-- restart after game over
+function restart()
+  building:reset()
+  building:makeBuildings()
+  player:restart()
+  mode = "title"
+  emptyStage()
+  -- music(1,2500)
+end
+
+function emptyStage()
+  enemiesKilled = 0
+  building:resetBonus()
+  Enemy:resetAll()
+  supply:reset()
+end
+
+
+-- vertical scroll
 function setCameraY(y)
   y = y or -240
   cameraY = 0
