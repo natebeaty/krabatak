@@ -3,6 +3,7 @@ local gfx <const> = playdate.graphics
 
 class("Crab").extends(gfx.sprite)
 class("Gremlin").extends(gfx.sprite)
+class("Enemy").extends()
 
 local point <const> = playdate.geometry.point
 local rect <const> = playdate.geometry.rect
@@ -11,17 +12,33 @@ local frameTimer <const> = playdate.frameTimer
 local random <const> = math.random
 
 local enemySpeed = 1
-local minXPosition = -20
-local maxXPosition = 390
-local minYPosition = -230
-local maxYPosition = 260
+local crabMinX = -40
+local crabMaxX = 440
+local minYPosition = verticalScroll and -230 or -20
+local crabMaxY = 200
 
 local crabImagesTable = gfx.imagetable.new("images/crabcat")
 local gremlinImagesTable = gfx.imagetable.new("images/gremlin")
 
 local crabs = {}
 local gremlins = {}
-local maxEnemies = 5
+local maxEnemies = 2
+
+function Enemy:setMax(n)
+  maxEnemies = n
+end
+
+function Enemy:resetAll()
+  for a=1, #crabs do
+    crabs[a].directionTimer:remove()
+    crabs[a]:remove()
+  end
+  for a=1, #gremlins do
+    gremlins[a]:remove()
+  end
+  crabs = {}
+  gremlins = {}
+end
 
 function Crab:init(initialPosition)
   Crab.super.init(self)
@@ -53,8 +70,10 @@ end
 
 function Crab:checkSpawn()
   -- print("check spawn", #crabs, maxEnemies)
-  if (#crabs < maxEnemies and rnd()>0.99) then
-    local enemy = Crab(point.new(rnd(400), -cameraY))
+  if (#crabs < maxEnemies and rnd()>0.98) then
+    local point = point.new(rnd(400), -cameraY + 10)
+    local enemy = Crab(point)
+    print(point)
     enemy:addSprite()
     add(crabs, enemy)
   end
@@ -75,6 +94,7 @@ end
 function Crab:die()
   Animations:explosion(self.position.x, self.position.y)
   del(crabs, self)
+  self.directionTimer:remove()
   self:remove()
 end
 
@@ -83,7 +103,7 @@ function Crab:update()
   self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
   self:moveTo(self.position)
   -- offscreen?
-  if self.position.y > maxYPosition or self.position.x < minXPosition or self.position.x > maxXPosition or self.position.y < minYPosition then
+  if self.position.y > crabMaxY or self.position.x < crabMinX or self.position.x > crabMaxX or self.position.y < minYPosition then
     self.position = point.new(rnd(400), -cameraY)
   end
 end
@@ -118,7 +138,8 @@ function Gremlin:init(initialPosition)
 end
 
 function Gremlin:checkSpawn(initialPosition)
-  if random(1000)>500 and initialPosition.x > 35 and initialPosition.y < 365 and #gremlins < maxEnemies then
+  -- print("gremlin checkspawn",initialPosition)
+  if random(1000)>500 and #gremlins < maxEnemies and initialPosition.x > 35 and initialPosition.x < 365 then
     local enemy = Gremlin(initialPosition)
     enemy:addSprite()
     add(gremlins, enemy)

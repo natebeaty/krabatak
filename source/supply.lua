@@ -19,7 +19,6 @@ local maxYPosition = 208
 local supplyImagesTable = gfx.imagetable.new("images/supply")
 local balloonImagesTable = gfx.imagetable.new("images/balloon")
 
-local gameState = State()
 local screenWidth <const>, _ = playdate.display.getSize()
 
 local balloon = AnimatedSprite.new(balloonImagesTable)
@@ -71,8 +70,10 @@ end
 -- end
 
 function balloon:die()
-  self.launched = false
-  animations:explosion(self.position.x, self.position.y)
+  if self.launched then
+    self.launched = false
+    animations:explosion(self.position.x, self.position.y)
+  end
   self:stopAnimation()
   self:remove()
 end
@@ -157,7 +158,7 @@ function Supply:update()
 end
 
 function Supply:checkLaunch()
-  if (not balloon.launched and not self.launched and rnd()>0.995) then
+  if (not balloon.launched and not self.launched and rnd()>0.997) then
     self:launch()
   end
 end
@@ -170,4 +171,13 @@ function Supply:launch()
 
   self.launched = true
   self.deployed = false
+end
+
+function Supply:reset()
+  balloon.launched = false
+  balloon:remove()
+  if self.launched then
+    self.launched = false
+    self:remove()
+  end
 end
