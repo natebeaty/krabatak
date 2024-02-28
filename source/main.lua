@@ -31,16 +31,17 @@ math.randomseed(playdate.getSecondsSinceEpoch())
 
 local gfx <const> = playdate.graphics
 local frameTimer <const> = playdate.frameTimer
-local font <const> = gfx.font.new("images/font/Sasser-Slab-Bold")
+local font <const> = gfx.font.new("fonts/font-pedallica-fun-18")
 local point <const> = playdate.geometry.point
 local titleGfx = gfx.image.new("images/title")
 local gameOverGfx = gfx.image.new("images/game-over")
-local blinkTimer = frameTimer.new(6)
+local blinkTimer = frameTimer.new(8)
 blinkTimer.repeats = true
 
 gfx.setFont(font)
-verticalScroll = false
 
+-- globals
+verticalScroll = false
 cameraY = 0
 shakeit = 0
 hiscore = 0
@@ -127,14 +128,25 @@ end
 function levelFinished()
   -- need to clean anything up? reset player?
   mode = "bonus"
+  Enemy:resetAll()
 end
 
+-- level passed!
 function nextLevel()
   emptyStage()
   blinkyBuildings = nil
   level += 1
   Enemy:setMax(level * 2)
   player:respawn()
+  mode = "game"
+end
+
+-- start game from title
+function startGame()
+  emptyStage()
+  building:reset()
+  building:makeBuildings()
+  playdate.graphics.sprite.redrawBackground()
   mode = "game"
 end
 
@@ -154,7 +166,6 @@ function emptyStage()
   Enemy:resetAll()
   supply:reset()
 end
-
 
 -- vertical scroll
 function setCameraY(y)
@@ -203,15 +214,18 @@ function playdate.update()
 
   if mode == "title" then
 
+    shakeItNow()
+    Enemy:checkSpawn()
     titleGfx:draw(100, 40)
+    buttonText("Ⓐ START", 200, 135)
     if playdate.buttonJustPressed("A") then
-      mode = "game"
+      startGame()
     end
 
   elseif mode == "game" then
 
     shakeItNow()
-    Crab:checkSpawn()
+    Enemy:checkSpawn()
 
     if verticalScroll and player.position.y < 120 then
       city:setY(-240 - player.position.y + 120)
@@ -221,21 +235,23 @@ function playdate.update()
   elseif mode == "game_over" then
 
     gameOverGfx:draw(150, 40)
+    buttonText("Ⓐ RESTART", 200, 120)
     if playdate.buttonJustPressed("A") then
       restart()
     end
 
   elseif mode == "bonus" then
 
-    gfx.drawTextAligned("LEVEL "..level.." COMPLETE", 200, 50, kTextAlignment.center)
+    shadowText("LEVEL "..level.." COMPLETE", 200, 50)
 
     -- tally bonus points
     if (building:checkBonus()) then
-      if blinkTimer.frame < 3 then
-        gfx.drawTextAligned("BONUS POINTS", 200, 75, kTextAlignment.center)
+      if blinkTimer.frame < 4 then
+        shadowText("BONUS POINTS", 200, 75)
       end
     else
       blinkyBuildings = 1
+      buttonText("Ⓐ NEXT LEVEL", 200, 85)
       if playdate.buttonJustPressed("A") then
         nextLevel()
       end
