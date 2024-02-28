@@ -158,7 +158,7 @@ function Supply:update()
 end
 
 function Supply:checkLaunch()
-  if (not balloon.launched and not self.launched and rnd()>0.997) then
+  if ((mode=="game" or mode=="title") and not balloon.launched and not self.launched and rnd()>0.997) then
     self:launch()
   end
 end
