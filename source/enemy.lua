@@ -68,7 +68,7 @@ function Crab:init(initialPosition)
   self.chompCoords = {}
 end
 
-function Crab:checkSpawn()
+function Enemy:checkSpawn()
   -- print("check spawn", #crabs, maxEnemies)
   if (#crabs < maxEnemies and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
@@ -103,8 +103,12 @@ function Crab:update()
   self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
   self:moveTo(self.position)
   -- offscreen?
-  if self.position.y > crabMaxY or self.position.x < crabMinX or self.position.x > crabMaxX or self.position.y < minYPosition then
-    self.position = point.new(rnd(400), -cameraY)
+  if self.position.y > crabMaxY or self.position.y < minYPosition then
+    self.velocity.y = -self.velocity.y;
+  end
+  if self.position.x < crabMinX or self.position.x > crabMaxX then
+    -- self.position = point.new(rnd(400), -cameraY)
+    self.velocity.x = -self.velocity.x;
   end
 end
 
