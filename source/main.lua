@@ -163,7 +163,39 @@ function setCameraY(y)
   city:setY(y)
 end
 
+
+-- set..up..
 setup()
+
+-- text with shadow
+function shadowText(text, x, y)
+  gfx.setImageDrawMode("inverted")
+  gfx.drawTextAligned(text, x-1, y-1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y+1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+2, y+2, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+3, y+3, kTextAlignment.center)
+  gfx.setImageDrawMode("copy")
+  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
+end
+
+-- rounded button with centered text
+function buttonText(text, x, y)
+  local h = font:getHeight()
+  local w = font:getTextWidth(text)
+  local buttonX = x-(w+31)/2
+  local buttonY = y-3
+  gfx.setColor(gfx.kColorWhite)
+  gfx.setLineWidth(8)
+  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
+  gfx.setColor(gfx.kColorBlack)
+  gfx.setLineWidth(4)
+  gfx.setImageDrawMode("inverted")
+  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
+  gfx.fillRect(buttonX, buttonY, w+30, h+4)
+  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
+  gfx.setImageDrawMode("copy")
+end
+
 
 -- big ol' update loop
 function playdate.update()
