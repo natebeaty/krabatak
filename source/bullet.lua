@@ -34,6 +34,7 @@ function Bullet:init(bulletSize)
         other:die()
         self:remove()
         player:addScore(other.points)
+        checkLevel()
       elseif other:isa(Block) then
         other:hit()
         self:remove()
