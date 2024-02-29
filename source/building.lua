@@ -205,3 +205,15 @@ function Building:reset()
     end
   end
 end
+
+-- clear all building blocks
+function Building:reshuffle()
+  for b = 1, #self.buildings do
+    for i = 1, self.buildings[b].height do
+      for j=1, self.buildings[b].floors[i].width do
+        local block = self.buildings[b].floors[i].blocks[j]
+        block:setImage(blockImages:getImage(random(5)))
+      end
+    end
+  end
+end
