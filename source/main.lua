@@ -30,13 +30,20 @@ import "levels/city"
 math.randomseed(playdate.getSecondsSinceEpoch())
 
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
 local frameTimer <const> = playdate.frameTimer
 local font <const> = gfx.font.new("fonts/font-pedallica-fun-18")
 local point <const> = playdate.geometry.point
 local titleGfx = gfx.image.new("images/title")
 local gameOverGfx = gfx.image.new("images/game-over")
-local blinkTimer = frameTimer.new(8)
+local blinkTimer = frameTimer.new(10)
 blinkTimer.repeats = true
+
+-- sounds
+local bonusSfx = sound.sampleplayer.new("sounds/bonus")
+local gameOverSfx = sound.sampleplayer.new("sounds/game-over")
+local menuActionSfx = sound.sampleplayer.new("sounds/menu-action")
+local startGameSfx = sound.sampleplayer.new("sounds/start-game")
 
 gfx.setFont(font)
 
@@ -108,6 +115,7 @@ end
 
 -- game over, man!
 function gameOver()
+  gameOverSfx:play()
   mode = "game_over"
   blinkyBuildings = 1
   hiscore = math.max(hiscore, player.score)
@@ -126,7 +134,6 @@ end
 
 -- level done!
 function levelFinished()
-  -- need to clean anything up? reset player?
   mode = "bonus"
   Enemy:resetAll()
 end
@@ -135,6 +142,7 @@ end
 function nextLevel()
   emptyStage()
   blinkyBuildings = nil
+  building:reshuffle()
   level += 1
   Enemy:setMax(level * 2)
   player:respawn()
@@ -143,8 +151,9 @@ end
 
 -- start game from title
 function startGame()
+  startGameSfx:play()
   emptyStage()
-  building:reset()
+  building:clearAll()
   building:makeBuildings()
   playdate.graphics.sprite.redrawBackground()
   mode = "game"
@@ -152,7 +161,7 @@ end
 
 -- restart after game over
 function restart()
-  building:reset()
+  building:clearAll()
   building:makeBuildings()
   player:restart()
   mode = "title"
@@ -219,6 +228,7 @@ function playdate.update()
     titleGfx:draw(100, 40)
     buttonText("Ⓐ START", 200, 135)
     if playdate.buttonJustPressed("A") then
+      menuActionSfx:play()
       startGame()
     end
 
@@ -237,6 +247,7 @@ function playdate.update()
     gameOverGfx:draw(150, 40)
     buttonText("Ⓐ RESTART", 200, 120)
     if playdate.buttonJustPressed("A") then
+      menuActionSfx:play()
       restart()
     end
 
@@ -246,13 +257,15 @@ function playdate.update()
 
     -- tally bonus points
     if (building:checkBonus()) then
-      if blinkTimer.frame < 4 then
+      bonusSfx:play()
+      if blinkTimer.frame < 5 then
         shadowText("BONUS POINTS", 200, 75)
       end
     else
       blinkyBuildings = 1
       buttonText("Ⓐ NEXT LEVEL", 200, 85)
       if playdate.buttonJustPressed("A") then
+        menuActionSfx:play()
         nextLevel()
       end
     end
@@ -261,6 +274,6 @@ function playdate.update()
 
   gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
-  -- playdate.drawFPS(2, 224)
+  playdate.drawFPS(2, 224)
 
 end

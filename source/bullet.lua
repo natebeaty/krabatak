@@ -1,5 +1,6 @@
-
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
+
 class("Bullet").extends(playdate.graphics.sprite)
 
 local collisionSize = 3
@@ -9,6 +10,8 @@ local maxXPosition = 390
 local minYPosition = -230
 local maxYPosition = 230
 
+local bulletSfx = sound.sampleplayer.new("sounds/bullet")
+
 function Bullet:init(bulletSize)
   Bullet.super.init(self)
   self.bulletSize = bulletSize
@@ -17,6 +20,8 @@ function Bullet:init(bulletSize)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
   -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+
+  bulletSfx:play()
 
   function self:setVelocity(dx, dy, facing)
     if dx==0 then self.dx=0 elseif dx<0 then self.dx=-self.bulletSize*2 else self.dx=self.bulletSize*2 end

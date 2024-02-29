@@ -1,5 +1,5 @@
-
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
 
 class("Crab").extends(gfx.sprite)
 class("Gremlin").extends(gfx.sprite)
@@ -19,6 +19,9 @@ local crabMaxY = 200
 
 local crabImagesTable = gfx.imagetable.new("images/crabcat")
 local gremlinImagesTable = gfx.imagetable.new("images/gremlin")
+
+local crabDeathSfx = sound.sampleplayer.new("sounds/crab-death-combined")
+local gremlinDeathSfx = sound.sampleplayer.new("sounds/gremlin-death-combined")
 
 local crabs = {}
 local gremlins = {}
@@ -73,7 +76,7 @@ function Enemy:checkSpawn()
   if (#crabs < maxEnemies and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = Crab(point)
-    print(point)
+    -- print(point)
     enemy:addSprite()
     add(crabs, enemy)
   end
@@ -92,6 +95,7 @@ function Crab:changeDirection(s)
 end
 
 function Crab:die()
+  crabDeathSfx:play()
   Animations:explosion(self.position.x, self.position.y)
   del(crabs, self)
   self.directionTimer:remove()
@@ -159,6 +163,7 @@ function Gremlin:changeDirection(s)
 end
 
 function Gremlin:die()
+  gremlinDeathSfx:play()
   Animations:explosion(self.position.x, self.position.y)
   del(gremlins, self)
   self:remove()

@@ -3,6 +3,7 @@ import "CoreLibs/sprites"
 import "lib/AnimatedSprite.lua"
 
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
 local point <const> = playdate.geometry.point
 local vector2D <const> = playdate.geometry.vector2D
 
@@ -18,6 +19,8 @@ local maxYPosition = 208
 
 local supplyImagesTable = gfx.imagetable.new("images/supply")
 local balloonImagesTable = gfx.imagetable.new("images/balloon")
+local deathSfx = sound.sampleplayer.new("sounds/death")
+local balloonDeploySfx = sound.sampleplayer.new("sounds/balloon-deploy")
 
 local screenWidth <const>, _ = playdate.display.getSize()
 
@@ -70,6 +73,7 @@ end
 -- end
 
 function balloon:die()
+  deathSfx:play()
   if self.launched then
     self.launched = false
     animations:explosion(self.position.x, self.position.y)
@@ -79,6 +83,7 @@ function balloon:die()
 end
 
 function balloon:launch()
+  balloonDeploySfx:play()
   self:addSprite()
   self.launched = true
   self:moveTo(self.position)
@@ -108,6 +113,7 @@ function Supply:init()
 end
 
 function Supply:die()
+  deathSfx:play()
   animations:explosion(self.position.x, self.position.y)
   self.position = point.new(-200,0)
   self:moveTo(self.position)

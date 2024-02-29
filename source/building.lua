@@ -1,16 +1,18 @@
 import "CoreLibs/sprites"
 
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
 local random = math.random
 
 class("Building").extends()
 class("Block").extends(gfx.sprite)
 
-local blockImagesTable = gfx.imagetable.new("images/block")
-local blocksImagesTable = gfx.imagetable.new("images/block")
-assert(blockImagesTable)
+local blockImages = gfx.imagetable.new("images/block")
 
-local columnWidth <const>, columnHeight <const> = blockImagesTable:getImage(1):getSize()
+local buildingHitSfx = sound.sampleplayer.new("sounds/crash")
+local buildingCollapseSfx = sound.sampleplayer.new("sounds/building-collapse")
+
+local columnWidth <const>, columnHeight <const> = blockImages:getImage(1):getSize()
 local maxBuildings <const> = 6
 local maxColumns <const> = math.floor(310 / columnWidth)
 local maxBuildingWidth <const> = 5
@@ -27,11 +29,10 @@ end
 function Block:init(x,y)
   Block.super.init(self)
 
-  self.blockImages = blockImagesTable
   -- randomize window state
-  self:setImage(self.blockImages:getImage(random(5)))
+  self:setImage(blockImages:getImage(random(5)))
   self:setZIndex(900)
-  self:setCollideRect(0, 0, self.blockImages:getImage(1):getSize())
+  self:setCollideRect(0, 0, blockImages:getImage(1):getSize())
   self:setGroups({1})
   self:setCollidesWithGroups({1})
   -- self.collisionpΩResponse = gfx.sprite.kCollisionTypeOverlap
@@ -47,7 +48,7 @@ end
 function Block:update()
   -- collapsing?
   if self.collapsing ~= nil then
-    self:setImage(self.blockImages:getImage(8 + self.collapsing % 5))
+    self:setImage(blockImages:getImage(8 + self.collapsing % 5))
     self.collapsing = self.collapsing + 1
     if self.collapsing > 15 then
       self:remove()
@@ -55,24 +56,26 @@ function Block:update()
   elseif self.broken == nil and ((blinkyBuildings ~= nil and random(100)>80) or random(1000)>999) then
     -- blink lights?
     if blinkyBuildings then
-      self:setImage(self.blockImages:getImage(rnd() > 0.5 and 1 or 5))
+      self:setImage(blockImages:getImage(rnd() > 0.5 and 1 or 5))
     else
-      self:setImage(self.blockImages:getImage(random(5)))
+      self:setImage(blockImages:getImage(random(5)))
     end
   end
 end
 
 -- block was hit by object
 function Block:hit()
+  buildingHitSfx:play()
   self.broken = true
   self:setGroups({2})
   -- random broken block sprite
-  self:setImage(self.blockImages:getImage(5 + random(4)))
+  self:setImage(blockImages:getImage(5 + random(4)))
   building:checkBuildingCollapse()
 end
 
 -- mark block as collapsing
 function Block:collapse()
+  buildingCollapseSfx:play()
   self.collapsing = 1
   self:setGroups({2})
   -- trigger screen shake
@@ -173,7 +176,7 @@ function Building:checkBonus()
         if block.broken == nil and block.bonused == nil then
           block.bonused = true
           player:addScore(10)
-          block:setImage(block.blockImages:getImage(1))
+          block:setImage(blockImages:getImage(1))
           animations:bonusYay(block.x, block.y)
           return true
         end
@@ -195,7 +198,7 @@ function Building:resetBonus()
 end
 
 -- clear all building blocks
-function Building:reset()
+function Building:clearAll()
   blinkyBuildings = nil
   for b = 1, #self.buildings do
     for i = 1, self.buildings[b].height do

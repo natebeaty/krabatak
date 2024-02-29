@@ -1,6 +1,7 @@
 import "CoreLibs/animation"
 
 local gfx <const> = playdate.graphics
+local sound <const> = playdate.sound
 class("Player").extends(gfx.sprite)
 
 local frameTimer <const> = playdate.frameTimer
@@ -33,6 +34,11 @@ local planeImages = gfx.imagetable.new("images/plane")
 local manImages = gfx.imagetable.new("images/man")
 local platformManImages = gfx.imagetable.new("images/platform-man")
 
+-- sounds
+local planeDeathSfx = sound.sampleplayer.new("sounds/crash")
+local manDeathSfx = sound.sampleplayer.new("sounds/man-death")
+local manPlaneSwitchSfx = sound.sampleplayer.new("sounds/man-plane-switch")
+
 -- player init
 function Player:init()
   Player.super.init(self)
@@ -53,6 +59,11 @@ end
 
 -- player has died
 function Player:die()
+  if self.mode == "man" then
+    manDeathSfx:play()
+  else
+    planeDeathSfx:play()
+  end
   animations:explosion(self.position.x, self.position.y)
   self.life -= 1
   self.dying = 1
@@ -281,6 +292,7 @@ function Player:addScore(n)
 end
 
 function Player:switchMode()
+  manPlaneSwitchSfx:play()
   local startX = self.position.x < 50 and leftStartX or rightStartX
   --switch between man/plane?
   if self.mode=="man" then
