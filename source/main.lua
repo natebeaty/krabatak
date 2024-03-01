@@ -14,7 +14,7 @@ import "levels/city"
 -- import "level"
 
 -- groups
--- player (1) -> enemy,block,supply,balloon
+-- player -> enemy,block,supply,balloon
 -- bullet -> enemy,block,supply,balloon
 -- enemy -> bullet,player,supply,balloon
 -- supply -> player,bullet,enemy
@@ -88,8 +88,8 @@ function setupStatusBar()
   function status:update()
     -- fuel update area
     if mode == "game" then
-    self.addDirtyRect(0, 0, 125, 25)
-  end
+      self.addDirtyRect(0, 0, 125, 25)
+    end
   end
   function status:draw()
     gfx.fillRect(0,0,400,25)
@@ -233,10 +233,10 @@ end
 function pd.update()
   gfx.sprite.update()
   if inputPause > 0 then inputPause-=1 end
+  shakeItNow()
 
   if mode == "title" then
 
-    shakeItNow()
     Enemy:checkSpawn()
     titleGfx:draw(100, 40)
     if inputPause==0 then
@@ -249,7 +249,6 @@ function pd.update()
 
   elseif mode == "game" then
 
-    shakeItNow()
     Enemy:checkSpawn()
     if player.mode == "man" then
       drawPlane()
