@@ -26,24 +26,31 @@ import "levels/city"
 -- 4 = floor borders
 -- 5 = change man/plane trigger blocks
 
--- betterize random
-math.randomseed(playdate.getSecondsSinceEpoch())
-
-local gfx <const> = playdate.graphics
-local sound <const> = playdate.sound
-local frameTimer <const> = playdate.frameTimer
+local pd <const> = playdate
+local gfx <const> = pd.graphics
+local sound <const> = pd.sound
+local frameTimer <const> = pd.frameTimer
 local font <const> = gfx.font.new("fonts/font-pedallica-fun-18")
-local point <const> = playdate.geometry.point
+local point <const> = pd.geometry.point
 local titleGfx = gfx.image.new("images/title")
 local gameOverGfx = gfx.image.new("images/game-over")
+local heartGfx = gfx.image.new("images/heart")
 local blinkTimer = frameTimer.new(10)
+local inputPause = 0
 blinkTimer.repeats = true
+
+-- betterize random
+math.randomseed(pd.getSecondsSinceEpoch())
 
 -- sounds
 local bonusSfx = sound.sampleplayer.new("sounds/bonus")
 local gameOverSfx = sound.sampleplayer.new("sounds/game-over")
 local menuActionSfx = sound.sampleplayer.new("sounds/menu-action")
 local startGameSfx = sound.sampleplayer.new("sounds/start-game")
+
+-- bonus stage stagger when counting
+local bonusStagger = 0
+local lastBonusStagger = 2.5
 
 gfx.setFont(font)
 
@@ -62,7 +69,7 @@ function shakeItNow()
   offsetX *= shakeit
   offsetY *= shakeit
 
-  playdate.display.setOffset(offsetX, offsetY)
+  pd.display.setOffset(offsetX, offsetY)
   shakeit *= fade
   if shakeit < 0.05 then
     shakeit = 0
@@ -88,9 +95,8 @@ function setupStatusBar()
     gfx.setImageDrawMode("NXOR")
     gfx.drawText("FUEL: "..math.ceil(player.fuel), 5, 5)
     gfx.drawTextAligned("SCORE: "..player.score, 200, 5, kTextAlignment.center)
-    local heart = gfx.image.new("images/heart")
     for i=1,player.life do
-      heart:draw(395-i*15,6)
+      heartGfx:draw(395-i*15,6)
     end
     gfx.setImageDrawMode("copy")
   end
@@ -101,9 +107,9 @@ end
 function setup()
   level = 1
   enemiesKilled = 0
+  city = City()
   player = Player()
   player:addSprite()
-  city = City()
   supply = Supply()
   train = Train()
   building = Building()
@@ -115,6 +121,7 @@ end
 
 -- game over, man!
 function gameOver()
+  inputPause = 30
   gameOverSfx:play()
   mode = "game_over"
   blinkyBuildings = 1
@@ -127,13 +134,14 @@ end
 -- enemy killed, check level progress
 function checkLevel()
   enemiesKilled += 1
-  if enemiesKilled >= 2 + 16*(level-1) then
+  if enemiesKilled >= 5*level then
     levelFinished()
   end
 end
 
 -- level done!
 function levelFinished()
+  inputPause = 30
   mode = "bonus"
   Enemy:resetAll()
 end
@@ -144,23 +152,25 @@ function nextLevel()
   blinkyBuildings = nil
   building:reshuffle()
   level += 1
-  Enemy:setMax(level * 2)
+  Enemy:setMax(level)
   player:respawn()
   mode = "game"
 end
 
 -- start game from title
 function startGame()
+  inputPause = 30
   startGameSfx:play()
   emptyStage()
   building:clearAll()
   building:makeBuildings()
-  playdate.graphics.sprite.redrawBackground()
+  pd.graphics.sprite.redrawBackground()
   mode = "game"
 end
 
 -- restart after game over
 function restart()
+  inputPause = 30
   building:clearAll()
   building:makeBuildings()
   player:restart()
@@ -218,24 +228,30 @@ end
 
 
 -- big ol' update loop
-function playdate.update()
+function pd.update()
   gfx.sprite.update()
+  if inputPause > 0 then inputPause-=1 end
 
   if mode == "title" then
 
     shakeItNow()
     Enemy:checkSpawn()
     titleGfx:draw(100, 40)
-    buttonText("Ⓐ START", 200, 135)
-    if playdate.buttonJustPressed("A") then
-      menuActionSfx:play()
-      startGame()
+    if inputPause==0 then
+      buttonText("Ⓐ START", 200, 135)
+      if pd.buttonJustPressed("A") then
+        menuActionSfx:play()
+        startGame()
+      end
     end
 
   elseif mode == "game" then
 
     shakeItNow()
     Enemy:checkSpawn()
+    if player.mode == "man" then
+      drawPlane()
+    end
 
     if verticalScroll and player.position.y < 120 then
       city:setY(-240 - player.position.y + 120)
@@ -245,10 +261,12 @@ function playdate.update()
   elseif mode == "game_over" then
 
     gameOverGfx:draw(150, 40)
-    buttonText("Ⓐ RESTART", 200, 120)
-    if playdate.buttonJustPressed("A") then
-      menuActionSfx:play()
-      restart()
+    if inputPause==0 then
+      buttonText("Ⓐ RESTART", 200, 120)
+      if pd.buttonJustPressed("A") then
+        menuActionSfx:play()
+        restart()
+      end
     end
 
   elseif mode == "bonus" then
@@ -256,24 +274,37 @@ function playdate.update()
     shadowText("LEVEL "..level.." COMPLETE", 200, 50)
 
     -- tally bonus points
-    if (building:checkBonus()) then
-      bonusSfx:play()
-      if blinkTimer.frame < 5 then
-        shadowText("BONUS POINTS", 200, 75)
+    if pd.buttonJustPressed("A") and lastBonusStagger < 2.25 then
+      lastBonusStagger = 0
+    end
+    if bonusStagger<=0 then
+      if building:checkBonus() then
+        if lastBonusStagger > 0.1 then
+          bonusStagger = lastBonusStagger
+          lastBonusStagger = lastBonusStagger/1.025
+        end
+        bonusSfx:play()
+      else
+        blinkyBuildings = 1
+        buttonText("Ⓐ NEXT LEVEL", 200, 85)
+        if inputPause==0 and pd.buttonJustPressed("A") then
+          menuActionSfx:play()
+          nextLevel()
+        end
+        lastBonusStagger = 2.5
       end
     else
-      blinkyBuildings = 1
-      buttonText("Ⓐ NEXT LEVEL", 200, 85)
-      if playdate.buttonJustPressed("A") then
-        menuActionSfx:play()
-        nextLevel()
-      end
+      bonusStagger -= 1
+    end
+
+    if not blinkyBuildings and blinkTimer.frame < 5 then
+      shadowText("BONUS POINTS", 200, 75)
     end
 
   end
 
   gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
-  playdate.drawFPS(2, 224)
+  pd.drawFPS(2, 224)
 
 end

@@ -25,7 +25,7 @@ local gremlinDeathSfx = sound.sampleplayer.new("sounds/gremlin-death-combined")
 
 local crabs = {}
 local gremlins = {}
-local maxEnemies = 2
+local maxEnemies = 1
 
 function Enemy:setMax(n)
   maxEnemies = n
@@ -145,9 +145,10 @@ function Gremlin:init(initialPosition)
   self.chompCoords = {}
 end
 
+-- spawn gremlin from crab?
 function Gremlin:checkSpawn(initialPosition)
   -- print("gremlin checkspawn",initialPosition)
-  if random(1000)>500 and #gremlins < maxEnemies and initialPosition.x > 35 and initialPosition.x < 365 then
+  if maxEnemies > 1 and random(1000)>800 and #gremlins < maxEnemies and initialPosition.x > 35 and initialPosition.x < 365 then
     local enemy = Gremlin(initialPosition)
     enemy:addSprite()
     add(gremlins, enemy)
