@@ -2,7 +2,7 @@ import "CoreLibs/sprites"
 
 local gfx <const> = playdate.graphics
 local sound <const> = playdate.sound
-local random = math.random
+local random, max, min, floor <const> = math.random, math.max, math.min, math.floor
 
 class("Building").extends()
 class("Block").extends(gfx.sprite)
@@ -13,9 +13,10 @@ local buildingHitSfx = sound.sampleplayer.new("sounds/crash")
 local buildingCollapseSfx = sound.sampleplayer.new("sounds/building-collapse")
 
 local columnWidth <const>, columnHeight <const> = blockImages:getImage(1):getSize()
-local maxBuildings <const> = 6
-local maxColumns <const> = math.floor(310 / columnWidth)
+local maxColumns <const> = floor(310 / columnWidth)
 local maxBuildingWidth <const> = 5
+local maxBuildings <const> = maxColumns * (maxBuildingWidth + 2)
+local minBuildingWidth <const> = 2
 
 -- new building
 function Building:init()
@@ -46,6 +47,7 @@ end
 
 -- block update loop
 function Block:update()
+  local r = random(10000)
   -- collapsing?
   if self.collapsing ~= nil then
     self:setImage(blockImages:getImage(8 + self.collapsing % 5))
@@ -53,14 +55,16 @@ function Block:update()
     if self.collapsing > 15 then
       self:remove()
     end
-  elseif self.broken == nil and ((blinkyBuildings ~= nil and random(100)>80) or random(1000)>999) then
-    -- blink lights?
-    if blinkyBuildings then
-      self:setImage(blockImages:getImage(rnd() > 0.5 and 1 or 5))
-    else
+  elseif self.broken == nil then
+    if blinkyBuildings ~= nil then
+      if r>8000 then
+        self:setImage(blockImages:getImage(r > 5000 and 1 or 5))
+      end
+    elseif mode ~= "bonus" and r>9990 then
       self:setImage(blockImages:getImage(random(5)))
     end
   end
+
 end
 
 -- block was hit by object
@@ -106,8 +110,8 @@ function Building:makeBuildings(maxHeight)
   for i = 1, maxBuildings do
     if (totalColumns < maxColumns) then
       local building = {
-        height = math.random(maxHeight) + 3,
-        width = math.min(maxColumns - totalColumns, random(4) + maxBuildingWidth-3),
+        height = random(maxHeight) + 3,
+        width = min(max(minBuildingWidth, maxColumns-totalColumns), random(4) + maxBuildingWidth-3),
         floors = {},
         x = lastX
       }
@@ -117,7 +121,7 @@ function Building:makeBuildings(maxHeight)
       local lastFloorWidth = building.width
       for n = 1, building.height do
         -- support narrowing buildings as we ascend
-        lastFloorWidth = lastFloorWidth>4 and rnd()>0.85 and lastFloorWidth - 2 or lastFloorWidth
+        lastFloorWidth = lastFloorWidth>2 and random(1000)>750 and lastFloorWidth - 1 or lastFloorWidth
         local floor = {
           blocks = {},
           width = lastFloorWidth
@@ -169,6 +173,8 @@ end
 
 -- bonus count: find next good block and set bonus
 function Building:checkBonus()
+  local blinksPerBonus = 2
+  local blinks = 0
   for b = 1, #self.buildings do
     for i = 1, self.buildings[b].height do
       for j=1, self.buildings[b].floors[i].width do
@@ -178,12 +184,14 @@ function Building:checkBonus()
           player:addScore(10)
           block:setImage(blockImages:getImage(1))
           animations:bonusYay(block.x, block.y)
-          return true
+          blinks+=1
+          if blinks >= blinksPerBonus then return true end
         end
       end
     end
   end
-  return false
+  -- return true if any blinks occurred (might be fewer than blinksPerBonus)
+  return blinks > 0 and true or false
 end
 
 -- find next good block and set bonus
