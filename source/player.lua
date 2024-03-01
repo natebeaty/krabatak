@@ -24,6 +24,7 @@ local manStartY = 213
 local leftStartX = 15 -- left dock X
 local rightStartX = 384 -- right dock X
 local minXPosition = 10
+local planeDocked = "left"
 local minYPosition = 33
 if verticalScroll then
   minYPosition = -160
@@ -38,6 +39,7 @@ local platformManImages = gfx.imagetable.new("images/platform-man")
 local planeDeathSfx = sound.sampleplayer.new("sounds/crash")
 local manDeathSfx = sound.sampleplayer.new("sounds/man-death")
 local manPlaneSwitchSfx = sound.sampleplayer.new("sounds/man-plane-switch")
+local extralifeSfx = sound.sampleplayer.new("sounds/extra-life")
 
 -- player init
 function Player:init()
@@ -52,29 +54,35 @@ function Player:init()
   self:restart()
 end
 
+-- draw static docked plane when mode=="man"
 function drawPlane()
   -- draw static plane
-  planeImages:drawImage(N,10,10)
+  planeImages:drawImage(N, planeDocked=="left" and leftStartX-20 or rightStartX-20, 167)
 end
 
 -- player has died
-function Player:die()
+function Player:die(x,y)
+  x = x or self.position.x
+  y = y or self.position.y
   if self.mode == "man" then
     manDeathSfx:play()
   else
     planeDeathSfx:play()
   end
-  animations:explosion(self.position.x, self.position.y)
+  animations:explosion(x, y)
+
+  -- lower lives and trigger updating status bar
   self.life -= 1
+
+  statusBar:markDirty()
   self.dying = 1
-  self.mode = "man"
+  -- self.mode = "man"
   self.position = point.new(leftStartX, manStartY)
   self.velocity = vector2D.new(0,0)
   self:setCollideRect(13,11,6,10)
   self.resetPlayerTimer = frameTimer.new(20, function()
     player:respawn()
   end)
-  statusBar:markDirty()
   if self.life == 0 then
     gameOver()
   end
@@ -86,6 +94,7 @@ function Player:respawn()
   self.facing = N
   self.fuel = 999
   -- move player to starting point
+  planeDocked = "left"
   self:setImage(planeImages:getImage(self.facing))
   self.position = point.new(leftStartX, manStartY)
   self:moveTo(self.position)
@@ -97,14 +106,10 @@ end
 function Player:restart()
   self.mode = "man"
   self:setCollideRect(13,11,6,10)
+  self.extralife = 0
   self.life = 3
   self.score = 0
-  self.extralife = 0
-  self.fuel = 999
-  self.position = point.new(leftStartX, manStartY)
-  self.exploding = false
-  self.velocity = vector2D.new(0,0)
-  self:moveTo(self.position)
+  self:respawn()
 end
 
 -- player update loop
@@ -243,12 +248,10 @@ function Player:update()
   if self.mode=="plane" then
     self:setImage(planeImages:getImage(self.facing))
   else
-    drawPlane()
     self:setImage(manImages:getImage(self.facing))
   end
 
   local x,y,c,l = self:moveWithCollisions(self.position)
-  self.position = point.new(x,y)
 
   for i = 1, l do
     local other = c[i].other
@@ -262,16 +265,18 @@ function Player:update()
       other:die()
     elseif other:isa(Train) then
       self:die()
-    end
-    if other:isa(Block) then
+    elseif other:isa(Block) then
       self:die()
       other:hit()
+    else
+      self.position = point.new(x,y)
     end
   end
 
 end
 
 function Player:refuel()
+  manPlaneSwitchSfx:play()
   self.fuel = min(self.fuel + 400, 999)
 end
 
@@ -283,7 +288,7 @@ function Player:addScore(n)
   if self.extralife >= 1000 then
     self.extralife = 0
     if (self.life < 5) then
-      -- sfx(15)
+      extralifeSfx:play()
       self.life += 1
     end
   end
@@ -293,7 +298,14 @@ end
 
 function Player:switchMode()
   manPlaneSwitchSfx:play()
-  local startX = self.position.x < 50 and leftStartX or rightStartX
+  local startX = nil
+  if (self.position.x < 50) then
+    startX = leftStartX
+    planeDocked = "left"
+  else
+    planeDocked = "right"
+    startX = rightStartX
+  end
   --switch between man/plane?
   if self.mode=="man" then
     self.mode="plane"
@@ -342,11 +354,9 @@ function Player:shoot()
     -- if self.velocity.y==0 and ((self.facing == W and self.velocity.x > 0) or (self.facing == E and self.velocity.x < 0)) then vx=self.velocity.x*-1 end
     -- if self.velocity.x==0 and ((self.facing == N and self.velocity.y<0) or (self.facing == S and self.velocity.y>0)) then vy=self.velocity.y*-1 end
 
+    -- add bullet at location and matching velocity of direction
     local bulletSize = self.mode=="man" and 12 or 24
-    local b = Bullet(bulletSize)
-    b:moveTo(self.position.x + bulletVelocity.x * 20, self.position.y + bulletVelocity.y * 20)
-    b:setVelocity(bulletVelocity.x, bulletVelocity.y, self.facing)
-    b:addSprite()
+    addBullet(bulletSize, self.position.x + bulletVelocity.x * 20, self.position.y + bulletVelocity.y * 20, bulletVelocity.x, bulletVelocity.y, self.facing)
 
   end
 end
