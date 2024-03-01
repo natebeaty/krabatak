@@ -11,17 +11,42 @@ local minYPosition = -230
 local maxYPosition = 230
 
 local bulletSfx = sound.sampleplayer.new("sounds/bullet")
+local bulletCache = {}
+
+function addBullet(bulletSize, x, y, dx, dy, facing)
+  local bullet = nil
+  if #bulletCache > 0 then
+    bullet = table.remove(bulletCache)
+    bullet:setBulletSize(bulletSize)
+  else
+    bullet = Bullet(bulletSize)
+  end
+
+  bullet:moveTo(x, y)
+  bullet:setVelocity(dx, dy, facing)
+  bullet:add()
+
+  bulletSfx:play()
+end
+
+function removeBullet(bullet)
+  bullet:remove()
+  bulletCache[#bulletCache+1] = bullet
+end
 
 function Bullet:init(bulletSize)
   Bullet.super.init(self)
-  self.bulletSize = bulletSize
-  self:setSize(self.bulletSize, self.bulletSize)
-  self:setCollideRect(self.bulletSize/2-collisionSize/2, self.bulletSize/2-collisionSize/2, collisionSize, collisionSize)
+
+  function self:setBulletSize(bulletSize)
+    self.bulletSize = bulletSize
+    self:setSize(self.bulletSize, self.bulletSize)
+    self:setCollideRect(self.bulletSize/2-collisionSize/2, self.bulletSize/2-collisionSize/2, collisionSize, collisionSize)
+  end
+
+  self:setBulletSize(bulletSize)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
   -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
-
-  bulletSfx:play()
 
   function self:setVelocity(dx, dy, facing)
     if dx==0 then self.dx=0 elseif dx<0 then self.dx=-self.bulletSize*2 else self.dx=self.bulletSize*2 end
@@ -37,22 +62,18 @@ function Bullet:init(bulletSize)
       local other = c[i].other
       if other.isEnemy then
         other:die()
-        self:remove()
         player:addScore(other.points)
         checkLevel()
-      elseif other:isa(Block) then
+      elseif other:isa(Block) and not other.broken then
         other:hit()
-        self:remove()
       elseif other:isa(Supply) or other.isBalloon then
         other:die()
-        self:remove()
-      else
-        self:remove()
       end
+      removeBullet(self)
     end
 
     if self.x < minXPosition or self.x > maxXPosition or self.y < minYPosition or self.y > maxYPosition or self.removeme then
-      self:remove()
+      removeBullet(self)
     end
   end
 
