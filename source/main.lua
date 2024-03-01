@@ -87,7 +87,9 @@ function setupStatusBar()
   status:add()
   function status:update()
     -- fuel update area
+    if mode == "game" then
     self.addDirtyRect(0, 0, 125, 25)
+  end
   end
   function status:draw()
     gfx.fillRect(0,0,400,25)
