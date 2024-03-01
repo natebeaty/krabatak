@@ -27,20 +27,45 @@ local crabs = {}
 local gremlins = {}
 local maxEnemies = 1
 
+local crabCache = {}
+local gremlinCache = {}
+
 function Enemy:setMax(n)
   maxEnemies = n
 end
 
 function Enemy:resetAll()
   for a=1, #crabs do
-    crabs[a].directionTimer:remove()
-    crabs[a]:remove()
+    removeCrab(crabs[a])
   end
   for a=1, #gremlins do
     gremlins[a]:remove()
   end
   crabs = {}
   gremlins = {}
+end
+
+function removeCrab(crab)
+  crab.directionTimer:pause()
+  crab.stepTimer:pause()
+  crab:remove()
+  crabCache[#crabCache+1] = crab
+end
+
+function addCrab(initialPosition)
+  local crab = nil
+  if #crabCache > 0 then
+    crab = table.remove(crabCache)
+    crab.directionTimer:start()
+    crab.stepTimer:start()
+  else
+    crab = Crab(initialPosition)
+  end
+
+  crab.position = initialPosition or point.new(rnd(400), 0)
+  crab.velocity = vector2D.new((rnd(3)-2)*1.25, rnd(2)*1.5)
+  crab:moveTo(crab.position)
+  return crab
 end
 
 function Crab:init(initialPosition)
@@ -61,21 +86,19 @@ function Crab:init(initialPosition)
   end)
   self.directionTimer.repeats = true
 
-  self.position = initialPosition or point.new(rnd(400), 0)
-  self.velocity = vector2D.new((rnd(3)-2)*1.25, rnd(2)*1.5)
-  self:moveTo(self.position)
-
   self.isEnemy = true
   self.points = 10
   self.chomp = 0
   self.chompCoords = {}
+
+  return self
 end
 
 function Enemy:checkSpawn()
   -- print("check spawn", #crabs, maxEnemies)
   if (#crabs < maxEnemies and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
-    local enemy = Crab(point)
+    local enemy = addCrab(point)
     -- print(point)
     enemy:addSprite()
     add(crabs, enemy)
@@ -98,8 +121,9 @@ function Crab:die()
   crabDeathSfx:play()
   Animations:explosion(self.position.x, self.position.y)
   del(crabs, self)
-  self.directionTimer:remove()
-  self:remove()
+  removeCrab(self)
+  -- self.directionTimer:remove()
+  -- self:remove()
 end
 
 function Crab:update()
