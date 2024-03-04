@@ -56,3 +56,11 @@ function City:setY(y)
   gfx.sprite.redrawBackground()
   -- gfx.setDrawOffset(0, y)
 end
+
+function City:changeBg(bg)
+  if bg == "night" then
+    bgGfx = bgNightGfx
+  elseif bg == "cloud" then
+    bgGfx = bgCloudGfx
+  end
+end
