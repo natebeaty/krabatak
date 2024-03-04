@@ -2,18 +2,45 @@ import "lib/AnimatedSprite.lua"
 
 class("Animations").extends()
 
-local gfx = playdate.graphics
+local pd = playdate
+local gfx = pd.graphics
 local explosionImages = gfx.imagetable.new("images/explosion")
 local bonusYayImages = gfx.imagetable.new("images/bonus-yay")
 local explosionCache = {}
 local bonusYayCache = {}
+local shake = 0
+local shakeDecay = 0.95
+
+--ye olde screen rattle
+function setScreenShake(n,d)
+  shake = n
+  shakeDecay = d or 0.95
+end
+function screenShake()
+  if shake > 0 then
+    local offsetX= 16-rnd(32)
+    local offsetY= 16-rnd(32)
+    offsetX *= shake
+    offsetY *= shake
+
+    pd.display.setOffset(offsetX, offsetY)
+    shake *= shakeDecay
+    if shake < 0.05 then
+      stopShake()
+    end
+  end
+end
+function stopShake()
+  pd.display.setOffset(0, 0)
+  shake = 0
+end
+
 
 function Animations:explosion(x,y)
   local anim = nil
   if #explosionCache > 0 then
     anim = table.remove(explosionCache)
     anim:stopAnimation()
-    print(#explosionCache, anim)
   else
     anim = AnimatedSprite.new(explosionImages)
     anim:setZIndex(1100)
