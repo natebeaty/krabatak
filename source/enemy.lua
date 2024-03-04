@@ -71,8 +71,7 @@ end
 function Crab:init(initialPosition)
   Crab.super.init(self)
 
-  self.imageTable = crabImagesTable
-  self:setImage(self.imageTable:getImage(1))
+  self:setImage(crabImagesTable:getImage(1))
   self:setZIndex(900)
   self:setCollideRect(5, 5, 40, 14)
   self:setGroups({1})
@@ -128,7 +127,7 @@ end
 
 function Crab:update()
   self.position += self.velocity
-  self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
+  self:setImage(crabImagesTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
   self:moveTo(self.position)
   -- offscreen?
   if self.position.y > crabMaxY or self.position.y < minYPosition then
@@ -146,10 +145,9 @@ end
 function Gremlin:init(initialPosition)
   Gremlin.super.init(self)
 
-  self.imageTable = gremlinImagesTable
-  self:setImage(self.imageTable:getImage(1))
+  self:setImage(gremlinImagesTable:getImage(1))
   self:setZIndex(900)
-  self:setCollideRect(0,0,self.imageTable:getImage(1):getSize())
+  self:setCollideRect(0,0,gremlinImagesTable:getImage(1):getSize())
   self:setGroups({1})
   self:setCollidesWithGroups({1})
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
@@ -197,9 +195,9 @@ end
 function Gremlin:update()
   -- animate egg or gremlin
   if self.mode=="egg" then
-    self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 3 or 4))
+    self:setImage(gremlinImagesTable:getImage(self.stepTimer.frame < 3 and 3 or 4))
   elseif self.mode=="gremlin" then
-    self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
+    self:setImage(gremlinImagesTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
   end
 
   --wandering gremlin
