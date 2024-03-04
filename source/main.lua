@@ -54,10 +54,14 @@ local lastBonusStagger = 2.5
 
 gfx.setFont(font)
 
+function setVerticalScroll(flag)
+  verticalScroll = flag
+  playerMinY = flag and -100 or 33
+end
+
 -- globals
-verticalScroll = false
-cameraY = 0
-shakeit = 0
+setVerticalScroll(true)
+cameraY = -120
 hiscore = 0
 blinkyBuildings = nil
 
@@ -232,6 +236,12 @@ end
 -- big ol' update loop
 function pd.update()
   gfx.sprite.update()
+  if verticalScroll and player.position.y < 120 then
+    local cityY = math.min(120 - player.position.y - 120, 20)
+    city:setY(cityY)
+    cameraY = cityY + 120
+    print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
+  end
   if inputPause > 0 then inputPause-=1 end
   shakeItNow()
 

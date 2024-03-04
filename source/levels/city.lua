@@ -3,8 +3,10 @@ import "CoreLibs/sprites"
 class("City").extends()
 
 local gfx <const> = playdate.graphics
-local background = gfx.image.new("images/background-tall")
-local titleBgGfx = gfx.image.new("images/title-bg")
+-- local background = gfx.image.new("images/background-tall")
+local bgCloudGfx = gfx.image.new("images/bg-clouds-tall")
+local bgNightGfx = gfx.image.new("images/bg-night")
+local bgGfx = bgCloudGfx
 
 local function addCollisionBox(x,y,w,h,flag)
   flag = flag or "wall"
@@ -37,13 +39,13 @@ function City:init()
   addCollisionBox(0,201,31,5,"playerModeSwitch")
   addCollisionBox(370,201,31,5,"playerModeSwitch")
 
-  self.by = -240
+  self.by = -120
   self.sprite = gfx.sprite.setBackgroundDrawingCallback(
     function(x, y, width, height)
       -- if mode == "title" then
-        titleBgGfx:draw(0, 0)
+        -- bgGfx:draw(0, 0)
       -- else
-      -- background:draw(0, self.by)
+      bgGfx:draw(0, self.by)
       -- end
     end
   )
