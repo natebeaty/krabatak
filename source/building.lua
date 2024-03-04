@@ -83,7 +83,7 @@ function Block:collapse()
   self.collapsing = 1
   self:setGroups({2})
   -- trigger screen shake
-  shakeit = 0.2
+  setScreenShake(0.2)
 end
 
 --                          1

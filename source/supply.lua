@@ -24,6 +24,18 @@ local balloonDeploySfx = sound.sampleplayer.new("sounds/balloon-deploy")
 
 local screenWidth <const>, _ = playdate.display.getSize()
 
+-- class('Shadows').extends(AnimatedSprite)
+-- function Shadows:init(x,y)
+--   self.shadowsSprite = gfx.imagetable.new("images/shadows")
+--   Shadows.super.init(self, self.shadowsSprite)
+--   self:moveTo(x, y)
+--   self:playAnimation()
+-- end
+
+-----------------
+-- supply balloon
+-- (emits from supply ship below)
+
 local balloon = AnimatedSprite.new(balloonImagesTable)
 balloon:setCollideRect(0, 0, balloonImagesTable:getImage(1):getSize())
 balloon:setGroups({3})
@@ -49,8 +61,7 @@ function balloon:update()
       if other.isEnemy then
         other:die()
         self:die()
-      elseif other:isa(Player) then
-
+      elseif other:isa(Player) and not player.dying then
         player:refuel()
         self.launched = false
         self:stopAnimation()
@@ -90,14 +101,13 @@ function balloon:launch()
   self:playAnimation()
 end
 
-
--- Supply ship
+--------------
+-- supply ship
 
 function Supply:init()
   Supply.super.init(self)
 
-  self.imagesTable = supplyImagesTable
-  self:setImage(self.imagesTable:getImage(1))
+  self:setImage(supplyImagesTable:getImage(1))
   self:setZIndex(900)
   self:setCollideRect(5, 5, 46, 10)
   self:setGroups({3})
@@ -130,14 +140,14 @@ function Supply:update()
       if other.isEnemy then
         other:die()
         self:die()
-      elseif other:isa(Player) then
+      elseif other:isa(Player) and not player.dying then
         other:die()
         self:die()
       end
     end
 
     -- animate jet
-    self:setImage(self.imagesTable:getImage(animTimer.frame < 1 and 1 or 2), self.velocity.x < 0 and '' or 'flipX')
+    self:setImage(supplyImagesTable:getImage(animTimer.frame < 1 and 1 or 2), self.velocity.x < 0 and '' or 'flipX')
 
     if self.position.x < minXPosition or self.position.x > maxXPosition then
       self.launched = false

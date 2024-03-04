@@ -18,25 +18,24 @@ local planeAcceleration = 1.5
 local planeAccelerationNeutral = 0.75
 local planeFriction = 0.85
 local manFriction = 0.55
-local NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9 -- plane sprite indexes
 local planeStartY = 186
 local manStartY = 213
 local leftStartX = 15 -- left dock X
 local rightStartX = 384 -- right dock X
-local minXPosition = 10
+local playerMinX = 10
 local planeDocked = "left"
-local minYPosition = 33
+playerMinY = 33
 if verticalScroll then
-  minYPosition = -160
+  playerMinY = -220
 end
-local maxXPosition = 390
-local maxYPosition = 230
+local playerMaxX = 390
+local playMaxY = 230
 local planeImages = gfx.imagetable.new("images/plane")
 local manImages = gfx.imagetable.new("images/man")
 local platformManImages = gfx.imagetable.new("images/platform-man")
 
 -- sounds
-local planeDeathSfx = sound.sampleplayer.new("sounds/crash")
+local crashSfx = sound.sampleplayer.new("sounds/crash")
 local manDeathSfx = sound.sampleplayer.new("sounds/man-death")
 local manPlaneSwitchSfx = sound.sampleplayer.new("sounds/man-plane-switch")
 local extralifeSfx = sound.sampleplayer.new("sounds/extra-life")
@@ -67,7 +66,7 @@ function Player:die(x,y)
   if self.mode == "man" then
     manDeathSfx:play()
   else
-    planeDeathSfx:play()
+    crashSfx:play()
   end
   animations:explosion(x, y)
 
@@ -90,7 +89,8 @@ end
 
 -- respawn player after dying
 function Player:respawn()
-  setCameraY()
+  -- reset camera
+  cameraY = 0
   self.facing = N
   self.fuel = 999
   -- move player to starting point
@@ -115,7 +115,7 @@ end
 -- player update loop
 function Player:update()
   -- dying?
-  if mode ~= "game" or self.dying ~= nil then
+  if (mode ~= "game" and mode ~= "boss1") or self.dying ~= nil then
     self:setImage(nil)
     self:moveTo(self.position)
     return
@@ -229,19 +229,19 @@ function Player:update()
   self.position = self.position + self.velocity
 
   -- don't move outside the walls of the game
-  if self.position.x < minXPosition then
+  if self.position.x < playerMinX then
     self.velocity.x = 0
-    self.position.x = minXPosition
-  elseif self.position.x > maxXPosition then
+    self.position.x = playerMinX
+  elseif self.position.x > playerMaxX then
     self.velocity.x = 0
-    self.position.x = maxXPosition
+    self.position.x = playerMaxX
   end
-  if self.position.y < minYPosition then
+  if self.position.y < playerMinY then
     self.velocity.y = 0
-    self.position.y = minYPosition
-  elseif self.position.y > maxYPosition then
+    self.position.y = playerMinY
+  elseif self.position.y > playMaxY then
     self.velocity.y = 0
-    self.position.y = maxYPosition
+    self.position.y = playMaxY
   end
 
   -- set player sprite based on direction
@@ -257,6 +257,8 @@ function Player:update()
     local other = c[i].other
     if other.flag and other.flag=="playerModeSwitch" then
       self:switchMode()
+    elseif other.isBoss or other.isBossTarget then
+      self:die()
     elseif other.isEnemy then
       self:die()
       other:die()
@@ -336,9 +338,8 @@ end
 
 -- shoot!
 function Player:shoot()
-  if mode=="game" and (self.mode=="man" or abs(self.velocity.x)~=0 or abs(self.velocity.y)~=0) then
+  if (mode=="game" or mode=="boss1") and (self.mode=="man" or abs(self.velocity.x)~=0 or abs(self.velocity.y)~=0) then
 
-    -- sfx(00)
     local bulletVelocity = nil
 
     if self.facing==N then bulletVelocity = vector2D.new(0,-planeAccelerationNeutral) end

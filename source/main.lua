@@ -2,6 +2,7 @@ import "CoreLibs/timer"
 import "CoreLibs/frameTimer"
 import "CoreLibs/graphics"
 import "CoreLibs/easing"
+import "lib/sequence"
 import "utility"
 import "player"
 import "bullet"
@@ -9,6 +10,7 @@ import "building"
 import "supply"
 import "train"
 import "enemy"
+import "boss"
 import "animations"
 import "levels/city"
 -- import "level"
@@ -19,12 +21,14 @@ import "levels/city"
 -- enemy -> bullet,player,supply,balloon
 -- supply -> player,bullet,enemy
 -- balloon -> player,bullet,enemy,block
+-- boss -> player,bullet
 --
 -- 1 = player, enemies, building
 -- 2 = broken blocks (no collisions)
 -- 3 = supply, balloon
 -- 4 = floor borders
 -- 5 = change man/plane trigger blocks
+-- 6 = boss?
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -37,12 +41,14 @@ local gameOverGfx = gfx.image.new("images/game-over")
 local heartGfx = gfx.image.new("images/heart")
 local blinkTimer = frameTimer.new(10)
 local inputPause = 0
+local boss1 = nil
 blinkTimer.repeats = true
 
 -- betterize random
 math.randomseed(pd.getSecondsSinceEpoch())
 
 -- sounds
+local musicSfx = sound.sampleplayer.new("sounds/music")
 local bonusSfx = sound.sampleplayer.new("sounds/bonus")
 local gameOverSfx = sound.sampleplayer.new("sounds/game-over")
 local menuActionSfx = sound.sampleplayer.new("sounds/menu-action")
@@ -52,6 +58,7 @@ local startGameSfx = sound.sampleplayer.new("sounds/start-game")
 local bonusStagger = 0
 local lastBonusStagger = 2.5
 
+-- set default font
 gfx.setFont(font)
 
 function setVerticalScroll(flag)
@@ -64,21 +71,7 @@ setVerticalScroll(true)
 cameraY = -120
 hiscore = 0
 blinkyBuildings = nil
-
---ye olde screen rattle
-function shakeItNow()
-  local fade = 0.95
-  local offsetX= 16-rnd(32)
-  local offsetY= 16-rnd(32)
-  offsetX *= shakeit
-  offsetY *= shakeit
-
-  pd.display.setOffset(offsetX, offsetY)
-  shakeit *= fade
-  if shakeit < 0.05 then
-    shakeit = 0
-  end
-end
+NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
 
 -- Status bar on top with fuel, score, lives
 function setupStatusBar()
@@ -122,7 +115,8 @@ function setup()
   building:makeBuildings()
   statusBar = setupStatusBar()
   animations = Animations()
-  mode = "title"
+  mode = "game"
+  -- musicSfx:play()
 end
 
 -- game over, man!
@@ -133,14 +127,12 @@ function gameOver()
   blinkyBuildings = 1
   hiscore = math.max(hiscore, player.score)
   -- dset(0,hiscore) --record hiscore in cartdata
-  level = 1
-  -- sfx(04)
 end
 
 -- enemy killed, check level progress
 function checkLevel()
   enemiesKilled += 1
-  if enemiesKilled >= 5*level then
+  if enemiesKilled >= 1*level then
     levelFinished()
   end
 end
@@ -148,6 +140,7 @@ end
 -- level done!
 function levelFinished()
   inputPause = 30
+  cameraY = 0
   mode = "bonus"
   Enemy:resetAll()
 end
@@ -160,11 +153,19 @@ function nextLevel()
   level += 1
   Enemy:setMax(level)
   player:respawn()
-  mode = "game"
+  -- if level == 2 then
+  --   City:changeBg("night")
+  -- end
+  if level == 2 then
+    Boss:boss1_intro()
+  else
+    mode = "game"
+  end
 end
 
 -- start game from title
 function startGame()
+  musicSfx:stop()
   inputPause = 30
   startGameSfx:play()
   emptyStage()
@@ -180,7 +181,10 @@ function restart()
   building:clearAll()
   building:makeBuildings()
   player:restart()
+  musicSfx:play()
   mode = "title"
+  level = 1
+  Enemy:setMax(level)
   emptyStage()
   -- music(1,2500)
 end
@@ -191,14 +195,6 @@ function emptyStage()
   Enemy:resetAll()
   supply:reset()
 end
-
--- vertical scroll
-function setCameraY(y)
-  y = y or -240
-  cameraY = 0
-  city:setY(y)
-end
-
 
 -- set..up..
 setup()
@@ -236,14 +232,20 @@ end
 -- big ol' update loop
 function pd.update()
   gfx.sprite.update()
+  sequence.update()
+  Boss:update()
+
+  screenShake()
+
   if verticalScroll and player.position.y < 120 then
     local cityY = math.min(120 - player.position.y - 120, 20)
     city:setY(cityY)
     cameraY = cityY + 120
     print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
   end
+
+  -- pause input (e.g. after level ends)
   if inputPause > 0 then inputPause-=1 end
-  shakeItNow()
 
   if mode == "title" then
 
@@ -262,11 +264,6 @@ function pd.update()
     Enemy:checkSpawn()
     if player.mode == "man" then
       drawPlane()
-    end
-
-    if verticalScroll and player.position.y < 120 then
-      city:setY(-240 - player.position.y + 120)
-      cameraY = 120-player.position.y
     end
 
   elseif mode == "game_over" then
@@ -316,6 +313,6 @@ function pd.update()
 
   gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
-  pd.drawFPS(2, 224)
+  -- pd.drawFPS(2, 224)
 
 end
