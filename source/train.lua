@@ -21,8 +21,7 @@ local screenWidth <const>, _ = playdate.display.getSize()
 function Train:init()
   Train.super.init(self)
 
-  self.imagesTable = trainImagesTable
-  self:setImage(self.imagesTable:getImage(1))
+  self:setImage(trainImagesTable:getImage(1))
   self:setZIndex(1000)
   local sw,sh = trainImagesTable:getImage(1):getSize()
   self:setCollideRect(4, 4, sw-8, sh-8)
@@ -66,11 +65,11 @@ end
 function Train:launch()
   self.position.x = rnd()>0.35 and -40 or screenWidth + 40
   self.velocity = vector2D.new(self.position.x < 0 and 3 or -3, 0)
-  self:setImage(self.imagesTable:getImage(1))
+  self:setImage(trainImagesTable:getImage(1))
   -- express?
   if rnd()>0.7 then
     self.velocity *= 2
-    self:setImage(self.imagesTable:getImage(2))
+    self:setImage(trainImagesTable:getImage(2))
   end
   self:moveTo(self.position)
   self.launched = true
