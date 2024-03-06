@@ -4,6 +4,7 @@ import "CoreLibs/graphics"
 import "CoreLibs/easing"
 import "lib/sequence"
 import "utility"
+import "bossBullet"
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -28,6 +29,15 @@ local hornSfx = sound.sampleplayer.new("sounds/horn")
 local buildingCollapseSfx = sound.sampleplayer.new("sounds/building-collapse")
 
 -- boss1 anim sequences
+local boss1_shoot_sequence = sequence.new():from(1):to(179, 5, "outQuad"):callback(function()
+  if not boss1.dying then
+    bossShoot()
+  end
+end)
+function bossShoot()
+  boss1_shoot_sequence:stop()
+  boss1_shoot_sequence:start()
+end
 local boss1_head_sequence = sequence.new():from(260):to(70, 0.75, "outQuad"):callback(function()
   local t = frameTimer.new(50, -20, 20, easing.inOutQuad)
   t.reverses = true
@@ -42,14 +52,9 @@ local boss1_entry_sequence = sequence.new():from(1):to(100, 1, "outQuad"):callba
   buildingCollapseSfx:play()
   setVerticalScroll(true)
   boss1_head_sequence:start()
+  boss1_shoot_sequence:start()
   mode = "boss1"
 end)
-
--- boss1
-
--- | head
--- | eye
-
 
 -- local boss1_intro_sequence = sequence.new():from(0):sleep(3):callback(function()
 --   -- setScreenShake(1)
@@ -152,6 +157,7 @@ function Boss1:hit(x,y)
   end
 end
 function Boss1:die()
+  self.dying = true
   boss1_death_sequence:start()
   -- crabDeathSfx:play()
   -- Animations:explosion(self.position.x, self.position.y)
@@ -193,6 +199,11 @@ function Boss:update()
 
     local headY = boss1_head_sequence:get()
     boss1.position.y = headY
+    local shootAngle = floor(boss1_shoot_sequence:get())
+    if shootAngle % 6 == 0 then
+      addBossBullet(shootAngle % 12 == 0 and "sm" or "lg", boss1.x, boss1.y, shootAngle, 2)
+    end
+
 
   elseif mode == "boss1_entry" then
 
