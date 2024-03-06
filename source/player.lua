@@ -19,7 +19,7 @@ local planeAccelerationNeutral = 0.75
 local planeFriction = 0.85
 local manFriction = 0.55
 local planeStartY = 186
-local manStartY = 213
+local manStartY = 214
 local leftStartX = 15 -- left dock X
 local rightStartX = 384 -- right dock X
 local playerMinX = 10
@@ -80,6 +80,7 @@ function Player:die(x,y)
   self.velocity = vector2D.new(0,0)
   self:setCollideRect(13,11,6,10)
   self.resetPlayerTimer = frameTimer.new(20, function()
+    resetCamera()
     player:respawn()
   end)
   if self.life == 0 then
@@ -89,8 +90,6 @@ end
 
 -- respawn player after dying
 function Player:respawn()
-  -- reset camera
-  cameraY = 0
   self.facing = N
   self.fuel = 999
   -- move player to starting point
@@ -257,7 +256,7 @@ function Player:update()
     local other = c[i].other
     if other.flag and other.flag=="playerModeSwitch" then
       self:switchMode()
-    elseif other.isBoss or other.isBossTarget then
+    elseif other.isBoss then
       self:die()
     elseif other.isEnemy then
       self:die()
@@ -270,6 +269,8 @@ function Player:update()
     elseif other:isa(Block) then
       self:die()
       other:hit()
+    elseif other:isa(BossBullet) then
+      self:die()
     else
       self.position = point.new(x,y)
     end

@@ -130,7 +130,7 @@ function Building:makeBuildings(maxHeight)
         for x = 1, lastFloorWidth do
           local buildingLeftX = 40 + building.x*columnWidth
           local narrowingOffset = (building.width - lastFloorWidth)*columnWidth/2
-          local block = Block(buildingLeftX + narrowingOffset + x*columnWidth, 224 - n * columnHeight)
+          local block = Block(buildingLeftX + narrowingOffset + x*columnWidth, 225 - n * columnHeight)
           -- block.building = building
           block:addSprite()
           add(floor.blocks, block)

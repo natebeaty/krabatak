@@ -30,6 +30,14 @@ import "levels/city"
 -- 5 = change man/plane trigger blocks
 -- 6 = boss?
 
+-- space harrier
+-- crabcats
+-- chicago chomp
+-- raptor
+-- raid on playville
+-- space raid
+--
+
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 local sound <const> = pd.sound
@@ -63,13 +71,17 @@ gfx.setFont(font)
 
 function setVerticalScroll(flag)
   verticalScroll = flag
-  playerMinY = flag and -100 or 33
+  playerMinY = verticalScroll and -100 or 33
+end
+function resetCamera()
+  cameraY = 0
+  city:setY(-120)
 end
 
 -- globals
-setVerticalScroll(true)
-cameraY = -120
+setVerticalScroll(false)
 hiscore = 0
+cameraY = 0
 blinkyBuildings = nil
 NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
 
@@ -140,7 +152,7 @@ end
 -- level done!
 function levelFinished()
   inputPause = 30
-  cameraY = 0
+  resetCamera()
   mode = "bonus"
   Enemy:resetAll()
 end
@@ -231,18 +243,25 @@ end
 
 -- big ol' update loop
 function pd.update()
+  if verticalScroll and player.position.y < 120 then
+    local cityY = math.min(-player.position.y, 20)
+    city:setY(cityY)
+    cameraY = cityY + 120
+    -- print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
+  end
+
+  gfx.setDrawOffset(0,cameraY)
+
   gfx.sprite.update()
   sequence.update()
   Boss:update()
 
   screenShake()
 
-  if verticalScroll and player.position.y < 120 then
-    local cityY = math.min(120 - player.position.y - 120, 20)
-    city:setY(cityY)
-    cameraY = cityY + 120
-    print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
-  end
+-- 0
+-- 100: cityY = -100
+-- 120
+-- 240
 
   -- pause input (e.g. after level ends)
   if inputPause > 0 then inputPause-=1 end
@@ -311,8 +330,7 @@ function pd.update()
 
   end
 
-  gfx.setDrawOffset(0,cameraY)
   frameTimer.updateTimers()
-  -- pd.drawFPS(2, 224)
+  pd.drawFPS(2, 224)
 
 end
