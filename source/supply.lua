@@ -95,7 +95,7 @@ end
 
 function balloon:launch()
   balloonDeploySfx:play()
-  self:addSprite()
+  self:add()
   self.launched = true
   self:moveTo(self.position)
   self:playAnimation()
@@ -119,7 +119,7 @@ function Supply:init()
 
   self.launched = false
   self.deployed = false
-  self:addSprite()
+  self:add()
 end
 
 function Supply:die()

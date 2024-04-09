@@ -99,7 +99,7 @@ function Enemy:checkSpawn()
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = addCrab(point)
     -- print(point)
-    enemy:addSprite()
+    enemy:add()
     add(crabs, enemy)
   end
 end
@@ -172,7 +172,7 @@ function Gremlin:checkSpawn(initialPosition)
   -- print("gremlin checkspawn",initialPosition)
   if maxEnemies > 1 and random(1000)>800 and #gremlins < maxEnemies and initialPosition.x > 35 and initialPosition.x < 365 then
     local enemy = Gremlin(initialPosition)
-    enemy:addSprite()
+    enemy:add()
     add(gremlins, enemy)
   end
 end

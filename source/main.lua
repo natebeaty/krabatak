@@ -120,7 +120,7 @@ function setup()
   enemiesKilled = 0
   city = City()
   player = Player()
-  player:addSprite()
+  player:add()
   supply = Supply()
   train = Train()
   building = Building()
@@ -169,7 +169,7 @@ function nextLevel()
   --   City:changeBg("night")
   -- end
   if level == 2 then
-    Boss:boss1_intro()
+    Boss:boss1_entry()
   else
     mode = "game"
   end

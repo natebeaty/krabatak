@@ -20,7 +20,7 @@ local function addCollisionBox(x,y,w,h,flag)
   box:setGroups({1})
   box:setCollidesWithGroups({1})
   -- box.collisionResponse = gfx.sprite.kCollisionTypeSlide
-  box:addSprite()
+  box:add()
   box.flag = flag
 end
 
