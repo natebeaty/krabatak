@@ -39,6 +39,7 @@ function Bullet:init(bulletSize)
   self:setBulletSize(bulletSize)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
+  self.isBullet = true
   -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
 
   return self

@@ -2,7 +2,7 @@ local pd <const> = playdate
 local gfx <const> = pd.graphics
 local sound <const> = pd.sound
 
--- local cos, sin <const> = math.cos, math,sin
+local cos, sin = math.cos, math.sin
 
 -- local bullet = {}
 --
@@ -72,11 +72,11 @@ local maxYPosition = 250
 
 local bulletGfx = gfx.imagetable.new("images/bullet-blorb")
 local bulletGfx2 = gfx.imagetable.new("images/bullet-spinner")
-local bulletSfx = sound.sampleplayer.new("sounds/boss-bullet")
+local bulletSfx = sound.sampleplayer.new("sounds/boss-boop")
 local bulletSfx2 = sound.sampleplayer.new("sounds/boss-bullet2")
 local bulletCache = {}
 
-function addBossBullet(type, x, y, a, v)
+function addBossBullet(type, x, y, dir, speed)
   -- print("abb", type, x, y, a, v)
   local bullet = nil
   if #bulletCache > 0 then
@@ -87,7 +87,7 @@ function addBossBullet(type, x, y, a, v)
   end
 
   bullet:moveTo(x, y)
-  bullet:setAngle(a, v)
+  bullet:setAngle(speed, dir)
   bullet:add()
   bullet:sfx()
 end
@@ -103,20 +103,21 @@ function BossBullet:init(type)
   self:setBulletType(type)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
-  self:setZIndex(1001)
+  self:setZIndex(1002)
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
   self.t = 0
+  self.isBossBullet = true
 
   return self
 end
 
 -- play sfx for bullet type
 function BossBullet:sfx()
-  if self.type == "lg" then
-    bulletSfx2:play()
-  else
-    bulletSfx:play()
-  end
+  -- if self.type == "lg" then
+  --   bulletSfx2:play()
+  -- else
+  --   bulletSfx:play()
+  -- end
 end
 
 -- update bullet type
@@ -131,19 +132,24 @@ function BossBullet:setBulletType(type)
 end
 
 -- set bullet velocity after init
-function BossBullet:setAngle(a, v)
-  self.a = a
-  self.v = v
+function BossBullet:setAngle(speed, dir)
+  self.dx = speed * cos(dir)
+  self.dy = speed * sin(dir)
+end
+
+function BossBullet:die()
+  print("bb die")
+  Animations:explosion(self.x, self.y, "lg")
+  removeBossBullet(self)
 end
 
 function BossBullet:update()
   self.t += 1
-  local dx, dy = self.v * math.cos(self.a), self.v * math.sin(self.a)
-  self.x, self.y = self.x + dx, self.y + dy
+  self.x, self.y = self.x + self.dx, self.y + self.dy
   local x,y,c,l = self:moveWithCollisions(self.x, self.y)
 
+  -- animate bullet
   local i = self.t % 4 == 0 and 1 or 2
-  -- print("bb", self.t, self.t % 4i, dx, dy, x, y, l)
   if self.type == "lg" then
     self:setImage(bulletGfx:getImage(i))
   else
