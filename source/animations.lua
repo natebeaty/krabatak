@@ -5,6 +5,7 @@ class("Animations").extends()
 local pd = playdate
 local gfx = pd.graphics
 local explosionImages = gfx.imagetable.new("images/explosion")
+local bigExplosionImages = gfx.imagetable.new("images/big-explosion")
 local bonusYayImages = gfx.imagetable.new("images/bonus-yay")
 local explosionCache = {}
 local bonusYayCache = {}
@@ -35,14 +36,29 @@ function stopShake()
   shake = 0
 end
 
+-- function setAnimType(anim,type)
 
-function Animations:explosion(x,y)
+function Animations:explosion(x,y,type)
   local anim = nil
+  type = type or "sm"
   if #explosionCache > 0 then
     anim = table.remove(explosionCache)
     anim:stopAnimation()
+    if anim.type ~= type then
+      if type == "sm" then
+        anim.imageTable = explosionImages
+      else
+        anim.imageTable = bigExplosionImages
+      end
+      anim:setSize(anim:getImage(1):getSize())
+    end
   else
-    anim = AnimatedSprite.new(explosionImages)
+    if type == "sm" then
+      anim = AnimatedSprite.new(explosionImages)
+    else
+      anim = AnimatedSprite.new(bigExplosionImages)
+    end
+    anim.type = type
     anim:setZIndex(1100)
     anim:setStates({
       {
@@ -56,6 +72,10 @@ function Animations:explosion(x,y)
       }
     })
   end
+  -- if type == "sm" then
+  --   anim:setImage(
+  -- end
+  -- Animations:setType(type or "sm")
   anim:moveTo(x, y)
   anim:playAnimation()
 end
