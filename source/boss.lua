@@ -39,11 +39,20 @@ function bossShoot()
   boss1_shoot_sequence:start()
 end
 local boss1_head_sequence = sequence.new():from(260):to(70, 0.75, "outQuad"):callback(function()
-  local t = frameTimer.new(50, -20, 20, easing.inOutQuad)
-  t.reverses = true
-  t.repeats = true
-  t.updateCallback = function(timer)
-    boss1.position.x = 200 + floor(timer.value)
+  boss1.hasEntered = 1
+  local xt = frameTimer.new(50, -20, 20, easing.inOutQuad)
+  xt.reverses = true
+  xt.repeats = true
+  xt.updateCallback = function(timer)
+    -- boss1.position.x = 200 + floor(timer.value)
+  end
+  local yt = frameTimer.new(100, 0, 40, easing.inOutQuad)
+  yt.reverses = true
+  yt.repeats = true
+  yt.updateCallback = function(timer)
+    -- print(timer.value, floor(timer.value))
+    boss1.position.y = 80 + floor(timer.value)
+    -- print("bpy", boss1.position.y)
   end
 end)
 local boss1_entry_sequence = sequence.new():from(1):to(100, 1, "outQuad"):callback(function()
@@ -56,18 +65,6 @@ local boss1_entry_sequence = sequence.new():from(1):to(100, 1, "outQuad"):callba
   mode = "boss1"
 end)
 
--- local boss1_intro_sequence = sequence.new():from(0):sleep(3):callback(function()
---   -- setScreenShake(1)
---   hornSfx:play()
--- end):sleep(5):callback(function()
---   -- setScreenShake(1)
---   hornSfx:play()
--- end):sleep(5):callback(function()
---   -- mode = "boss1_entry"
---   -- boss1_entry_sequence:start()
---   boss1_entry2_sequence:start()
--- end)
-
 -- death sequence multiple explosion groups
 local deathExplosionOffset = 30
 local numDeathExplosions = 5
@@ -75,7 +72,7 @@ local numDeathExplosions = 5
 local boss1_death_sequence = sequence.new():from(0):sleep(0.5):callback(function(t)
   crashSfx:play()
   for i=1,numDeathExplosions do
-    animations:explosion(boss1.position.x - deathExplosionOffset + random(deathExplosionOffset*2), boss1.position.y - deathExplosionOffset + random(deathExplosionOffset*2))
+    Animations:explosion(boss1.position.x - deathExplosionOffset + random(deathExplosionOffset*2), boss1.position.y - deathExplosionOffset + random(deathExplosionOffset*2), i % 3 == 0 and "lg" or "sm")
   end
   print("nl", t.numLoops)
   if t.numLoops > 3 then
@@ -121,6 +118,7 @@ function Boss1:init()
   self.eyeBall:setGroups({1})
   self.eyeBall:setCollidesWithGroups({1})
 
+  -- make eyeball follow player
   function self.eyeBall:update()
     local x = self.parent.x
     local y = self.parent.y+5
@@ -132,8 +130,8 @@ function Boss1:init()
     self:moveTo(x,y)
   end
 
-  self:addSprite()
-  self.eyeBall:addSprite()
+  self:add()
+  self.eyeBall:add()
 end
 
 function Boss1:changeDirection(s)
@@ -159,55 +157,25 @@ end
 function Boss1:die()
   self.dying = true
   boss1_death_sequence:start()
-  -- crabDeathSfx:play()
-  -- Animations:explosion(self.position.x, self.position.y)
-  -- self.directionTimer:remove()
-  -- self:remove()
 end
 
 function Boss1:update()
-  -- self.position += self.velocity
-  -- self:setImage(self.imageTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
-  self:moveTo(self.position)
-  -- offscreen?
-  -- if self.position.y > crabMaxY or self.position.y < minYPosition then
-  --   self.velocity.y = -self.velocity.y;
-  -- end
-  -- if self.position.x < crabMinX or self.position.x > crabMaxX then
-  --   -- self.position = point.new(rnd(400), -cameraY)
-  --   self.velocity.x = -self.velocity.x;
-  -- end
-end
-boss1 = Boss1()
 
-
------------------
--- static methods
-
-
--- boss 1 intro
-function Boss:boss1_intro()
-  -- mode = "boss1_intro"
-  -- boss1_intro_sequence:start()
-  mode = "boss1_entry"
-  boss1_entry_sequence:start()
-end
-
--- global boss update loop
-function Boss:update()
   if mode == "boss1" then
 
-    local headY = boss1_head_sequence:get()
-    boss1.position.y = headY
+    if not boss1.hasEntered then
+      -- sliding head up from offscreen
+      boss1.position.y = floor(boss1_head_sequence:get())
+    end
+
     local shootAngle = floor(boss1_shoot_sequence:get())
-    if shootAngle % 6 == 0 then
+    if shootAngle % 13 == 0 then
       addBossBullet(shootAngle % 12 == 0 and "sm" or "lg", boss1.x, boss1.y, shootAngle, 2)
     end
 
-
   elseif mode == "boss1_entry" then
 
-    local n = math.floor(boss1_entry_sequence:get())
+    local n = floor(boss1_entry_sequence:get())
 
     -- WARNING horn blare
     if n == 40 or n == 80 then
@@ -225,4 +193,23 @@ function Boss:update()
     end
 
   end
+
+  self:moveTo(self.position)
+
+end
+boss1 = Boss1()
+
+
+-----------------
+-- static methods
+
+
+-- boss 1 intro
+function Boss:boss1_entry()
+  mode = "boss1_entry"
+  boss1_entry_sequence:start()
+end
+
+-- global boss update loop
+function Boss:update()
 end
