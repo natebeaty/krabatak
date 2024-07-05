@@ -99,9 +99,9 @@ function Bullet:draw()
   -- x1, y1, x2, y2 = self.bulletSize, self.bulletSize, self.dx*self.bulletSize, self.dy*self.bulletSize
 
   gfx.setColor(gfx.kColorWhite)
+  gfx.setLineWidth(4)
+  gfx.drawLine(x1, y1, x2, y2)
   gfx.setLineWidth(2)
-  gfx.drawLine(x1, y1-1, x2, y2-1)
-  gfx.drawLine(x1, y1+1, x2, y2+1)
   gfx.setColor(gfx.kColorBlack)
   gfx.drawLine(x1, y1, x2, y2)
 end
