@@ -217,13 +217,15 @@ function Building:clearAll()
   end
 end
 
--- clear all building blocks
+-- reshuffle blocks
 function Building:reshuffle()
   for b = 1, #self.buildings do
     for i = 1, self.buildings[b].height do
       for j=1, self.buildings[b].floors[i].width do
         local block = self.buildings[b].floors[i].blocks[j]
-        block:setImage(blockImages:getImage(random(5)))
+        if (block.broken == 0) then
+          block:setImage(blockImages:getImage(random(5)))
+        end
       end
     end
   end
