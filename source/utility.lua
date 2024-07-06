@@ -1,6 +1,7 @@
 -- utility miscellany
 
 local min, max, abs, random, ceil = math.min, math.max, math.abs, math.random, math.ceil
+local distanceToPoint <const> = playdate.geometry.distanceToPoint
 
 local function clamp(a, b, c)
   if b > c then
@@ -74,4 +75,9 @@ end
 
 function normalize(val, a, b)
   return (val - b) / (a - b) * 2 - 1
+end
+
+-- distance between center points of two sprites
+function closeness(one, other)
+  return distanceToPoint(one.x, one.y, other.x, other.y)
 end
