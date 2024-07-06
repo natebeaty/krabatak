@@ -5,7 +5,8 @@ class("City").extends()
 local gfx <const> = playdate.graphics
 -- local background = gfx.image.new("images/background-tall")
 local bgCloudGfx = gfx.image.new("images/bg-clouds-tall")
-local bgNightGfx = gfx.image.new("images/bg-night")
+local bgDuskGfx = gfx.image.new("images/bg-dusk-tall")
+local bgNightGfx = gfx.image.new("images/bg-night-tall")
 local bgGfx = bgCloudGfx
 
 local function addCollisionBox(x,y,w,h,flag)
@@ -39,6 +40,8 @@ function City:init()
   addCollisionBox(0,201,31,5,"playerModeSwitch")
   addCollisionBox(370,201,31,5,"playerModeSwitch")
 
+  self.bg = "day"
+
   self.by = -120
   self.sprite = gfx.sprite.setBackgroundDrawingCallback(
     function(x, y, width, height)
@@ -60,7 +63,11 @@ end
 function City:changeBg(bg)
   if bg == "night" then
     bgGfx = bgNightGfx
-  elseif bg == "cloud" then
+  elseif bg == "dusk" then
+    bgGfx = bgDuskGfx
+  else
     bgGfx = bgCloudGfx
   end
+  self.bg = bg
+  gfx.sprite.redrawBackground()
 end

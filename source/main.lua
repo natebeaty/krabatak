@@ -127,8 +127,8 @@ function setup()
   building:makeBuildings()
   statusBar = setupStatusBar()
   animations = Animations()
-  mode = "game"
-  -- musicSfx:play()
+  mode = "title"
+  musicSfx:play()
 end
 
 -- game over, man!
@@ -144,7 +144,7 @@ end
 -- enemy killed, check level progress
 function checkLevel()
   enemiesKilled += 1
-  if enemiesKilled >= 1*level then
+  if enemiesKilled >= 5 + 5*(level-1) then
     levelFinished()
   end
 end
@@ -165,14 +165,18 @@ function nextLevel()
   level += 1
   Enemy:setMax(level)
   player:respawn()
-  -- if level == 2 then
-  --   City:changeBg("night")
-  -- end
-  if level == 2 then
-    Boss:boss1_entry()
-  else
-    mode = "game"
+  if level % 3 == 1 then
+    city:changeBg("day")
+  elseif level % 3 == 2 then
+    city:changeBg("dusk")
+  elseif level % 3 == 0 then
+    city:changeBg("night")
   end
+  -- if level == 2 then
+  --   Boss:boss1_entry()
+  -- else
+    mode = "game"
+  -- end
 end
 
 -- start game from title
@@ -196,6 +200,7 @@ function restart()
   musicSfx:play()
   mode = "title"
   level = 1
+  city:changeBg("day")
   Enemy:setMax(level)
   emptyStage()
   -- music(1,2500)
@@ -213,13 +218,20 @@ setup()
 
 -- text with shadow
 function shadowText(text, x, y)
-  gfx.setImageDrawMode("inverted")
+  -- Draw text shadow
+  gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
   gfx.drawTextAligned(text, x-1, y-1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x-1, y+1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y-1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y, kTextAlignment.center)
   gfx.drawTextAligned(text, x+1, y+1, kTextAlignment.center)
   gfx.drawTextAligned(text, x+2, y+2, kTextAlignment.center)
   gfx.drawTextAligned(text, x+3, y+3, kTextAlignment.center)
-  gfx.setImageDrawMode("copy")
+  -- Draw text
+  gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
   gfx.drawTextAligned(text, x, y, kTextAlignment.center)
+
+  gfx.setImageDrawMode("copy")
 end
 
 -- rounded button with centered text
