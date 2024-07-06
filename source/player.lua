@@ -330,7 +330,8 @@ function Player:switchMode()
 end
 
 function Player:collisionResponse(other)
-  if other.isBalloon or (other.flag and other.flag == "playerModeSwitch") then
+  -- If hitting balloon or player man/plane switch, sprites overlay
+  if other.isBalloon or other.isEnemy or (other.flag and other.flag == "playerModeSwitch") then
     return "overlap"
   else
     return "freeze"
