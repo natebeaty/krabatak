@@ -32,7 +32,7 @@ function Block:init(x,y)
 
   -- randomize window state
   self:setImage(blockImages:getImage(random(5)))
-  self:setZIndex(900)
+  self:setZIndex(800)
   self:setCollideRect(0, 0, blockImages:getImage(1):getSize())
   self:setGroups({1})
   self:setCollidesWithGroups({1})
@@ -40,9 +40,6 @@ function Block:init(x,y)
   self.x = x
   self.y = y
   self:moveTo(x,y)
-  -- self.collapsing = 0
-  -- self.chomping = 0
-  -- self.broken = 0
 end
 
 -- block update loop

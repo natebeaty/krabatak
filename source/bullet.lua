@@ -1,7 +1,7 @@
 local gfx <const> = playdate.graphics
 local sound <const> = playdate.sound
 
-class("Bullet").extends(playdate.graphics.sprite)
+class("Bullet").extends(gfx.sprite)
 
 local collisionSize = 3
 local minXPosition = -40
@@ -66,9 +66,11 @@ function Bullet:update()
   for i=1,l do
     local other = c[i].other
     if other.isEnemy then
-      other:die()
-      player:addScore(other.points)
-      checkLevel()
+      local dead = other:die()
+      if dead then
+        player:addScore(other.points)
+        checkLevel()
+      end
     elseif other.isBossTarget then
       other.parent:hit(self.x,self.y)
     elseif other:isa(Block) and not other.broken then
