@@ -6,6 +6,7 @@ import "lib/sequence"
 import "utility"
 import "player"
 import "bullet"
+import "laser"
 import "building"
 import "supply"
 import "train"
@@ -15,7 +16,7 @@ import "animations"
 import "levels/city"
 -- import "level"
 
--- groups
+-- collisions
 -- player -> enemy,block,supply,balloon
 -- bullet -> enemy,block,supply,balloon
 -- enemy -> bullet,player,supply,balloon
@@ -23,6 +24,7 @@ import "levels/city"
 -- balloon -> player,bullet,enemy,block
 -- boss -> player,bullet
 --
+-- groups
 -- 1 = player, enemies, building
 -- 2 = broken blocks (no collisions)
 -- 3 = supply, balloon
@@ -30,20 +32,13 @@ import "levels/city"
 -- 5 = change man/plane trigger blocks
 -- 6 = boss?
 
--- space harrier
--- crabcats
--- chicago chomp
--- raptor
--- raid on playville
--- space raid
---
-
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 local sound <const> = pd.sound
 local frameTimer <const> = pd.frameTimer
 local font <const> = gfx.font.new("fonts/font-pedallica-fun-18")
 local point <const> = pd.geometry.point
+local floor <const> = math.floor
 local titleGfx = gfx.image.new("images/title")
 local gameOverGfx = gfx.image.new("images/game-over")
 local heartGfx = gfx.image.new("images/heart")
@@ -69,21 +64,21 @@ local lastBonusStagger = 2.5
 -- set default font
 gfx.setFont(font)
 
+-- globals
+hiscore = 0
+cameraY = 0
+blinkyBuildings = nil
+NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
+
 function setVerticalScroll(flag)
   verticalScroll = flag
   playerMinY = verticalScroll and -100 or 33
 end
 function resetCamera()
+  player:respawn()
   cameraY = 0
   city:setY(-120)
 end
-
--- globals
-setVerticalScroll(false)
-hiscore = 0
-cameraY = 0
-blinkyBuildings = nil
-NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
 
 -- Status bar on top with fuel, score, lives
 function setupStatusBar()
@@ -116,7 +111,9 @@ end
 
 -- Initial setup
 function setup()
+  print("setup")
   level = 1
+  day = 1
   enemiesKilled = 0
   city = City()
   player = Player()
@@ -129,6 +126,7 @@ function setup()
   animations = Animations()
   mode = "title"
   musicSfx:play()
+  setVerticalScroll(true)
 end
 
 -- game over, man!
@@ -145,6 +143,7 @@ end
 function checkLevel()
   enemiesKilled += 1
   if enemiesKilled >= 5 + 5*(level-1) then
+  -- if enemiesKilled >= 1 + 1*(level-1) + 3*(day-1) then
     levelFinished()
   end
 end
@@ -162,15 +161,23 @@ function nextLevel()
   emptyStage()
   blinkyBuildings = nil
   building:reshuffle()
+  if level % 3 == 0 then
+    day += 1
+    level = 0
+  end
   level += 1
-  Enemy:setMax(level)
+  -- Enemy:setMax(level*day)
+  Enemy:setMax(5)
   player:respawn()
   if level % 3 == 1 then
     city:changeBg("day")
+    setVerticalScroll(true)
   elseif level % 3 == 2 then
     city:changeBg("dusk")
+    setVerticalScroll(true)
   elseif level % 3 == 0 then
     city:changeBg("night")
+    setVerticalScroll(true)
   end
   -- if level == 2 then
   --   Boss:boss1_entry()
@@ -199,9 +206,10 @@ function restart()
   player:restart()
   musicSfx:play()
   mode = "title"
+  day = 1
   level = 1
   city:changeBg("day")
-  Enemy:setMax(level)
+  Enemy:setMax(level*day)
   emptyStage()
   -- music(1,2500)
 end
@@ -255,10 +263,10 @@ end
 
 -- big ol' update loop
 function pd.update()
-  if verticalScroll and player.position.y < 120 then
+  if verticalScroll and player.position.y <= 120 then
     local cityY = math.min(-player.position.y, 20)
     city:setY(cityY)
-    cameraY = cityY + 120
+    cameraY = floor(cityY + 120)
     -- print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
   end
 
@@ -294,8 +302,10 @@ function pd.update()
 
     Enemy:checkSpawn()
     if player.mode == "man" then
+      -- draw stationary docked plane while man runs around
       drawPlane()
     end
+    gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
 
   elseif mode == "game_over" then
 
@@ -310,7 +320,7 @@ function pd.update()
 
   elseif mode == "bonus" then
 
-    shadowText("LEVEL "..level.." COMPLETE", 200, 50)
+    shadowText("DAY "..day.." - WAVE "..level.." COMPLETE", 200, 50)
 
     -- tally bonus points
     if pd.buttonJustPressed("A") and lastBonusStagger < 2.25 then
