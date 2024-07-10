@@ -39,7 +39,7 @@ local frameTimer <const> = pd.frameTimer
 local font <const> = gfx.font.new("fonts/font-pedallica-fun-18")
 local point <const> = pd.geometry.point
 local floor <const> = math.floor
-local titleGfx = gfx.image.new("images/title")
+local titleGfx = gfx.image.new("images/krabatak")
 local gameOverGfx = gfx.image.new("images/game-over")
 local heartGfx = gfx.image.new("images/heart")
 local blinkTimer = frameTimer.new(10)
@@ -289,7 +289,11 @@ function pd.update()
   if mode == "title" then
 
     Enemy:checkSpawn()
-    titleGfx:draw(100, 40)
+    if titleTimer.frame == 11 then
+      titleGfx:draw(math.random(35,45), math.random(35,45))
+    else
+      titleGfx:draw(40, 40)
+    end
     if inputPause==0 then
       buttonText("Ⓐ START", 200, 135)
       if pd.buttonJustPressed("A") then
