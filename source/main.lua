@@ -43,9 +43,11 @@ local titleGfx = gfx.image.new("images/krabatak")
 local gameOverGfx = gfx.image.new("images/game-over")
 local heartGfx = gfx.image.new("images/heart")
 local blinkTimer = frameTimer.new(10)
+local titleTimer = frameTimer.new(11)
 local inputPause = 0
 local boss1 = nil
 blinkTimer.repeats = true
+titleTimer.repeats = true
 
 -- betterize random
 math.randomseed(pd.getSecondsSinceEpoch())
@@ -126,7 +128,7 @@ function setup()
   animations = Animations()
   mode = "title"
   musicSfx:play()
-  setVerticalScroll(true)
+  setVerticalScroll(false)
 end
 
 -- game over, man!
@@ -171,13 +173,13 @@ function nextLevel()
   player:respawn()
   if level % 3 == 1 then
     city:changeBg("day")
-    setVerticalScroll(true)
+    setVerticalScroll(day > 1 and true or false)
   elseif level % 3 == 2 then
     city:changeBg("dusk")
-    setVerticalScroll(true)
+    setVerticalScroll(day > 1 and true or false)
   elseif level % 3 == 0 then
     city:changeBg("night")
-    setVerticalScroll(true)
+    setVerticalScroll(day > 1 and true or false)
   end
   -- if level == 2 then
   --   Boss:boss1_entry()

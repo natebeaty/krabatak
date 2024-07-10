@@ -251,6 +251,7 @@ function Player:update()
   end
 
   local x,y,c,l = self:moveWithCollisions(self.position)
+  self.position = point.new(x,y)
 
   for i = 1, l do
     local other = c[i].other
@@ -271,8 +272,6 @@ function Player:update()
       other:hit()
     elseif other:isa(BossBullet) then
       self:die()
-    else
-      self.position = point.new(x,y)
     end
   end
 

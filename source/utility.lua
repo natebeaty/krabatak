@@ -1,6 +1,6 @@
 -- utility miscellany
 
-local min, max, abs, random, ceil = math.min, math.max, math.abs, math.random, math.ceil
+local min <const>, max <const>, abs <const>, random <const>, ceil <const> = math.min, math.max, math.abs, math.random, math.ceil
 local distanceToPoint <const> = playdate.geometry.distanceToPoint
 
 local function clamp(a, b, c)
