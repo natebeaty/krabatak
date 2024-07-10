@@ -10,7 +10,7 @@ local point <const> = playdate.geometry.point
 local rect <const> = playdate.geometry.rect
 local vector2D <const> = playdate.geometry.vector2D
 local frameTimer <const> = playdate.frameTimer
-local random <const> = math.random
+local random <const>, sin <const>, cos <const>, atan2 <const> = math.random, math.sin, math.cos, math.atan2
 
 local enemySpeed = 1
 local crabMinX = -20
@@ -90,13 +90,13 @@ function Bishop:isDamaged()
   return self.hits < 1
 end
 
-function Bishop:changeDirection(s)
+function Bishop:changeDirection()
   self.directionTimer.duration = self:isDamaged() and random(50)+50 or random(100)+200
   self.directionTimer:reset()
   local multiplier = self:isDamaged() and 5 or 0.55
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1) * multiplier
+  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * multiplier
+    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
   end
   self.velocity = vector2D.new(dx, dy)
 end
@@ -110,7 +110,11 @@ function Bishop:die()
     return true
   else
     bishopHitSfx:play()
-    self.directionTimer.duration = random(50)+50
+    -- abruptly move towards player when hit
+    local angleToPlayer = atan2(player.y - self.y, player.x - self.x)
+    local dx, dy = cos(angleToPlayer) * 1.5, sin(angleToPlayer) * 1.5
+    self.velocity = vector2D.new(dx, dy)
+    self.directionTimer.duration = random(250)+50
     self.hits -= 1
     return false
   end
@@ -127,7 +131,7 @@ function Bishop:update()
   end
 
   -- start lasering? ( and self.y > 50 and self.y < 200)
-  if self.lasering == 0 and self.x > 50 and self.x < 350 and random(1000)>999 then
+  if self.lasering == 0 and self.x > 50 and self.x < 350 and random(1000)>995 then
     self.lasering = 150
     self.laser = addLaser(self.x, self.y)
   end
@@ -137,6 +141,12 @@ function Bishop:update()
     self.position += self.velocity
     self:moveTo(self.position)
   else
+    if self:isDamaged() then
+      -- move slowly while lasering if damaged
+      self.position += self.velocity * 0.15
+      self:moveTo(self.position)
+      self.laser:setPosition(self.x, self.y)
+    end
     self.lasering -= 1
   end
 
@@ -199,12 +209,13 @@ function Crab:init()
   return self
 end
 
-function Crab:changeDirection(s)
+function Crab:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75
+  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 47.5/10000+1) * 1.25, (rnd()) * (enemySpeed * enemySpeed * 47.5/10000+1) * 1.25
+  -- bounce off edge
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75
+    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 1.75
   end
   self.velocity = vector2D.new(dx, dy)
   Gremlin:checkSpawn(self.position)
@@ -295,10 +306,10 @@ function Gremlin:checkSpawn(initialPosition)
   end
 end
 
-function Gremlin:changeDirection(s)
+function Gremlin:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 0.5, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1) * 0.5
+  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 48/10000+1) * 0.5, (rnd()) * (enemySpeed * enemySpeed * 48/10000+1) * 0.5
   self.velocity = vector2D.new(dx, dy)
   -- print("gremlin changedirection", self.velocity)
 end
@@ -437,7 +448,7 @@ end
 
 function Enemy:checkSpawn()
   -- spawn crabs
-  if (#crabs < maxEnemies and rnd()>0.98) then
+  if (#crabs < (day == 1 and maxEnemies or maxEnemies/2) and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = addCrab(point)
     -- print(point)
@@ -446,7 +457,7 @@ function Enemy:checkSpawn()
   end
 
   -- spawn bishops
-  if (day > 0 and #bishops < maxEnemies and rnd()>0.98) then
+  if (day > 1 and #bishops < (day == 2 and maxEnemies/2 or maxEnemies/3) and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = addBishop(point)
     -- print(point)

@@ -5,6 +5,7 @@ local frameTimer <const> = playdate.frameTimer
 local random <const> = math.random
 local lineSegment <const> = geometry.lineSegment
 local rect <const> = geometry.rect
+local sin <const>, cos <const> = math.sin, math.cos
 
 class("Laser").extends(gfx.sprite)
 
@@ -32,10 +33,10 @@ function addLaser(x, y)
   laser.angle = random(1000)>500 and 1.570796 or 0
   laser.originX = x
   laser.originY = y + camOffset
-  laser.x1 = laser.originX - math.cos(laser.angle) * 25
-  laser.y1 = laser.originY - math.sin(laser.angle) * 25
-  laser.x2 = laser.originX + math.cos(laser.angle) * 25
-  laser.y2 = laser.originY + math.sin(laser.angle) * 25
+  laser.x1 = laser.originX - cos(laser.angle) * 25
+  laser.y1 = laser.originY - sin(laser.angle) * 25
+  laser.x2 = laser.originX + cos(laser.angle) * 25
+  laser.y2 = laser.originY + sin(laser.angle) * 25
   laser:moveTo(0,-camOffset)
   laser:add()
 
@@ -45,6 +46,11 @@ function addLaser(x, y)
 
   laser.sfx:play()
   return laser
+end
+
+function Laser:setPosition(x,y)
+  self.originX = x
+  self.originY = y + camOffset
 end
 
 function Laser:init()
@@ -59,26 +65,23 @@ function Laser:init()
 end
 
 function Laser:update()
-  -- self:moveTo(0,0)
   -- make sure twitching laser gets drawn on each frame
   self:markDirty()
-  -- self.addDirtyRect(0, 25, 400, 240)
 
+  local size = laserSize
+
+  -- mini-lasers pulse, hinting at full laser
   if self.shootTimer.frame < 80 then
-    -- mini-lasers pulse, hinting at full laser
     if self.shootTimer.frame % 27 == 0 then
       self.angle = (self.angle == 1.570796 and 0 or 1.570796)
-      self.x1 = self.originX - math.cos(self.angle) * 25
-      self.y1 = self.originY - math.sin(self.angle) * 25
-      self.x2 = self.originX + math.cos(self.angle) * 25
-      self.y2 = self.originY + math.sin(self.angle) * 25
     end
-  elseif self.shootTimer.frame == 80 then
-    self.x1 = self.originX - math.cos(self.angle) * laserSize
-    self.y1 = self.originY - math.sin(self.angle) * laserSize
-    self.x2 = self.originX + math.cos(self.angle) * laserSize
-    self.y2 = self.originY + math.sin(self.angle) * laserSize
+    size = 25
   end
+
+  self.x1 = self.originX - cos(self.angle) * size
+  self.y1 = self.originY - sin(self.angle) * size
+  self.x2 = self.originX + cos(self.angle) * size
+  self.y2 = self.originY + sin(self.angle) * size
 
   local lineTest = lineSegment.new(self.x1, self.y1-camOffset, self.x2, self.y2-camOffset)
   local playerBounds = player:getBoundsRect()

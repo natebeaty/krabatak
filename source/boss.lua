@@ -134,7 +134,7 @@ function Boss1:init()
   self.eyeBall:add()
 end
 
-function Boss1:changeDirection(s)
+function Boss1:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
   -- print("boss1.changeDirection")
