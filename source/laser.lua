@@ -61,27 +61,37 @@ function Laser:init()
   self:setSize(400,480)
   self:moveTo(0,-camOffset)
   self:setCenter(0,0)
+  self.lineWidth = random(4,10)
   return self
 end
 
 function Laser:update()
-  -- make sure twitching laser gets drawn on each frame
-  self:markDirty()
-
   local size = laserSize
 
   -- mini-lasers pulse, hinting at full laser
   if self.shootTimer.frame < 80 then
     if self.shootTimer.frame % 27 == 0 then
+      -- clear out previous laser before changing angle
+      self:markDirty()
       self.angle = (self.angle == 1.570796 and 0 or 1.570796)
     end
     size = 25
   end
 
+  self.lineWidth = random(4,10)
+
   self.x1 = self.originX - cos(self.angle) * size
   self.y1 = self.originY - sin(self.angle) * size
   self.x2 = self.originX + cos(self.angle) * size
   self.y2 = self.originY + sin(self.angle) * size
+
+  -- make sure twitching laser gets cleanly drawn on each frame (playdate wasn't marking area as dirty)
+  if self.angle == 0 then
+    self.addDirtyRect(self.x1-10, -camOffset+self.y1-self.lineWidth/2, size*2+20, self.lineWidth)
+  else
+    self.addDirtyRect(self.x1-self.lineWidth/2, -camOffset+self.y1-10, self.lineWidth, size*2+20)
+  end
+
 
   local lineTest = lineSegment.new(self.x1, self.y1-camOffset, self.x2, self.y2-camOffset)
   local playerBounds = player:getBoundsRect()
@@ -95,7 +105,7 @@ end
 function Laser:draw()
   gfx.setLineCapStyle(gfx.kLineCapStyleRound)
   gfx.setColor(gfx.kColorWhite)
-  gfx.setLineWidth(random(4,10))
+  gfx.setLineWidth(self.lineWidth)
   gfx.drawLine(self.x1, self.y1, self.x2, self.y2)
   gfx.setLineWidth(random(2))
   gfx.setColor(gfx.kColorBlack)
