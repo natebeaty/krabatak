@@ -27,9 +27,9 @@ local crabDeathSfx = sound.sampleplayer.new("sounds/crab-death-combined")
 local gremlinDeathSfx = sound.sampleplayer.new("sounds/gremlin-death-combined")
 
 local crabs = {}
-local bishops = {}
-local puffers = {}
 local gremlins = {}
+bishops = {}
+puffers = {}
 local maxEnemies = 1
 
 local crabCache = {}
