@@ -51,6 +51,8 @@ function Player:init()
   self:setCollideRect(13,11,6,10)
   -- set initial attributes
   self:restart()
+  -- add self to stage
+  self:add()
 end
 
 -- draw static docked plane when mode=="man"
@@ -255,7 +257,7 @@ function Player:update()
 
   for i = 1, l do
     local other = c[i].other
-    if other.flag and other.flag=="playerModeSwitch" then
+    if other.boundaryName and other.boundaryName=="playerModeSwitch" then
       self:switchMode()
     elseif other.isBoss then
       self:die()
@@ -330,7 +332,7 @@ end
 
 function Player:collisionResponse(other)
   -- If hitting balloon or player man/plane switch, sprites overlay
-  if other.isBalloon or other.isEnemy or (other.flag and other.flag == "playerModeSwitch") then
+  if other.isBalloon or other.isEnemy or (other.boundaryName and other.boundaryName == "playerModeSwitch") then
     return "overlap"
   else
     return "freeze"

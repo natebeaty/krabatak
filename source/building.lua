@@ -18,13 +18,9 @@ local maxBuildingWidth <const> = 5
 local maxBuildings <const> = maxColumns * (maxBuildingWidth + 2)
 local minBuildingWidth <const> = 2
 
--- new building
-function Building:init()
-  self.buildings = {}
-  self.buildingcrash = {}
-  self.rumblingrows = {}
-  self.peopleleft = 2
-end
+local buildings = {}
+local rumblingrows = {}
+local peopleleft = 2
 
 -- new block
 function Block:init(x,y)
@@ -61,7 +57,6 @@ function Block:update()
       self:setImage(blockImages:getImage(random(5)))
     end
   end
-
 end
 
 -- block was hit by object
@@ -71,7 +66,7 @@ function Block:hit()
   self:setGroups({2})
   -- random broken block sprite
   self:setImage(blockImages:getImage(5 + random(4)))
-  building:checkBuildingCollapse()
+  Building.checkBuildingCollapse()
 end
 
 -- mark block as collapsing
@@ -92,15 +87,15 @@ end
 -- 11111   111111  1111   11111
 
 -- create randomized buildings
-function Building:makeBuildings(maxHeight)
+function Building.makeBuildings(maxHeight)
   maxHeight = maxHeight or 4
 
   -- clear buildings && rumbling rows
-  self.buildings = {}
-  self.rumblingrows = {}
+  buildings = {}
+  rumblingrows = {}
 
   -- track people left (undamaged bricks)
-  self.peopleleft = 3
+  peopleleft = 3
 
   local lastX = 1
   local totalColumns = 1
@@ -135,20 +130,20 @@ function Building:makeBuildings(maxHeight)
 
         add(building.floors, floor)
       end
-      -- self.peopleleft += building.height * building.width
-      add(self.buildings, building)
+      -- peopleleft += building.height * building.width
+      add(buildings, building)
     end
   end
 end
 
 -- check for any building rows with all damaged blocks
-function Building:checkBuildingCollapse()
-  for b = 1, #self.buildings do
+function Building.checkBuildingCollapse()
+  for b = 1, #buildings do
     local buildingCollapsing = nil
-    for i = 1, self.buildings[b].height do
+    for i = 1, buildings[b].height do
       rowbusted = true
-      for j=1, self.buildings[b].floors[i].width do
-        local block = self.buildings[b].floors[i].blocks[j]
+      for j=1, buildings[b].floors[i].width do
+        local block = buildings[b].floors[i].blocks[j]
         if buildingCollapsing == nil and block.broken == nil then
           -- any undamaged pieces? row is not busted
           rowbusted = false
@@ -157,25 +152,25 @@ function Building:checkBuildingCollapse()
       if rowbusted then
         buildingCollapsing = buildingCollapsing or i-1
         -- mark all blocks in broken row as collapsing
-        for j=1, self.buildings[b].floors[i].width do
-          self.buildings[b].floors[i].blocks[j]:collapse()
+        for j=1, buildings[b].floors[i].width do
+          buildings[b].floors[i].blocks[j]:collapse()
         end
       end
     end
     -- reduce building height
-    self.buildings[b].height = buildingCollapsing or self.buildings[b].height
+    buildings[b].height = buildingCollapsing or buildings[b].height
   end
   return chk
 end
 
 -- bonus count: find next good block and set bonus
-function Building:checkBonus()
+function Building.checkBonus()
   local blinksPerBonus = 2
   local blinks = 0
-  for b = 1, #self.buildings do
-    for i = 1, self.buildings[b].height do
-      for j=1, self.buildings[b].floors[i].width do
-        local block = self.buildings[b].floors[i].blocks[j]
+  for b = 1, #buildings do
+    for i = 1, buildings[b].height do
+      for j=1, buildings[b].floors[i].width do
+        local block = buildings[b].floors[i].blocks[j]
         if block.broken == nil and block.bonused == nil then
           block.bonused = true
           player:addScore(10)
@@ -192,34 +187,34 @@ function Building:checkBonus()
 end
 
 -- find next good block and set bonus
-function Building:resetBonus()
-  for b = 1, #self.buildings do
-    for i = 1, self.buildings[b].height do
-      for j=1, self.buildings[b].floors[i].width do
-        self.buildings[b].floors[i].blocks[j].bonused = nil
+function Building.resetBonus()
+  for b = 1, #buildings do
+    for i = 1, buildings[b].height do
+      for j=1, buildings[b].floors[i].width do
+        buildings[b].floors[i].blocks[j].bonused = nil
       end
     end
   end
 end
 
 -- clear all building blocks
-function Building:clearAll()
+function Building.clearAll()
   blinkyBuildings = nil
-  for b = 1, #self.buildings do
-    for i = 1, self.buildings[b].height do
-      for j=1, self.buildings[b].floors[i].width do
-        self.buildings[b].floors[i].blocks[j]:remove()
+  for b = 1, #buildings do
+    for i = 1, buildings[b].height do
+      for j=1, buildings[b].floors[i].width do
+        buildings[b].floors[i].blocks[j]:remove()
       end
     end
   end
 end
 
 -- reshuffle blocks
-function Building:reshuffle()
-  for b = 1, #self.buildings do
-    for i = 1, self.buildings[b].height do
-      for j=1, self.buildings[b].floors[i].width do
-        local block = self.buildings[b].floors[i].blocks[j]
+function Building.reshuffle()
+  for b = 1, #buildings do
+    for i = 1, buildings[b].height do
+      for j=1, buildings[b].floors[i].width do
+        local block = buildings[b].floors[i].blocks[j]
         if (block.broken == 0) then
           block:setImage(blockImages:getImage(random(5)))
         end

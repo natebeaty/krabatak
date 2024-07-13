@@ -106,8 +106,8 @@ function Bishop:update()
     self:setImage(bishopImagesTable:getImage(self.stepTimer.frame % 6 + 1))
   end
 
-  -- start lasering? ( and self.y > 50 and self.y < 200)
-  if self.lasering == 0 and self.x > 50 and self.x < 350 and random(1000)>995 then
+  -- start lasering?
+  if self.lasering == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>995 then
     self.lasering = 150
     self.laser = addLaser(self.x, self.y)
   end

@@ -3,14 +3,14 @@ import "CoreLibs/sprites"
 class("City").extends()
 
 local gfx <const> = playdate.graphics
--- local background = gfx.image.new("images/background-tall")
 local bgCloudGfx = gfx.image.new("images/bg-clouds-tall")
 local bgDuskGfx = gfx.image.new("images/bg-dusk-tall")
 local bgNightGfx = gfx.image.new("images/bg-night-tall")
 local bgGfx = bgCloudGfx
+local currentBg
+local cityY
 
-local function addCollisionBox(x,y,w,h,flag)
-  flag = flag or "wall"
+local function addCollisionBox(x,y,w,h,boundaryName)
   local box = gfx.sprite:new()
   -- box:setIgnoresDrawOffset(true)
   box:setZIndex(1000)
@@ -20,13 +20,13 @@ local function addCollisionBox(x,y,w,h,flag)
   box:setCollideRect(0,0,w,h)
   box:setGroups({1})
   box:setCollidesWithGroups({1})
-  -- box.collisionResponse = gfx.sprite.kCollisionTypeSlide
   box:add()
-  box.flag = flag
+  -- flag used for collision behavior
+  box.boundaryName = boundaryName or "wall"
 end
 
-function City:init()
-  -- screen borders
+function City.init()
+  -- screen borders (these were just causing problems with sprites getting confused & stuck outside bounds)
   -- addCollisionBox(-5,0,5,240)
   -- addCollisionBox(400,0,5,240)
   -- addCollisionBox(0,0,400,25)
@@ -40,27 +40,26 @@ function City:init()
   addCollisionBox(0,201,31,5,"playerModeSwitch")
   addCollisionBox(370,201,31,5,"playerModeSwitch")
 
-  self.bg = "day"
-
-  self.by = -120
-  self.sprite = gfx.sprite.setBackgroundDrawingCallback(
+  currentBg = "day"
+  cityY = -120
+  local citySprite = gfx.sprite.setBackgroundDrawingCallback(
     function(x, y, width, height)
       -- if mode == "title" then
-        -- bgGfx:draw(0, 0)
+        -- bgGfx.draw(0, 0)
       -- else
-      bgGfx:draw(0, self.by)
+      bgGfx:draw(0, cityY)
       -- end
     end
   )
 end
 
-function City:setY(y)
-  self.by = y
+function City.setY(y)
+  cityY = y
   gfx.sprite.redrawBackground()
   -- gfx.setDrawOffset(0, y)
 end
 
-function City:changeBg(bg)
+function City.changeBg(bg)
   if bg == "night" then
     bgGfx = bgNightGfx
   elseif bg == "dusk" then
@@ -68,6 +67,6 @@ function City:changeBg(bg)
   else
     bgGfx = bgCloudGfx
   end
-  self.bg = bg
+  bg = bg
   gfx.sprite.redrawBackground()
 end

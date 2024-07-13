@@ -1,5 +1,6 @@
 import "puffer"
 import "bishop"
+import "enemyBullet"
 
 local gfx <const> = playdate.graphics
 local sound <const> = playdate.sound
@@ -108,6 +109,12 @@ end
 
 function Crab:update()
   self:setImage(crabImagesTable:getImage(self.stepTimer.frame < 3 and 1 or 2))
+
+  if random(1000)>990 then
+    local angleToPlayer = atan2(player.y - self.y, player.x - self.x)
+    -- local dx, dy = cos(angleToPlayer) * 1.5, sin(angleToPlayer) * 1.5
+    addEnemyBullet(self.x, self.y, angleToPlayer, 2)
+  end
 
   if self.chomp == 0 then
 
@@ -302,10 +309,10 @@ function Gremlin:update()
 end
 
 -- static Enemy
-function Enemy:setMax(n)
+function Enemy.setMax(n)
   maxEnemies = n
 end
-function Enemy:resetAll()
+function Enemy.clearAll()
   for a=1, #crabs do
     removeCrab(crabs[a])
   end
@@ -318,13 +325,13 @@ function Enemy:resetAll()
   for a=1, #puffers do
     removePuffer(puffers[a])
   end
-  crabs = {}
-  gremlins = {}
-  bishops = {}
-  puffers = {}
+  -- crabs = {}
+  -- gremlins = {}
+  -- bishops = {}
+  -- puffers = {}
 end
 
-function Enemy:checkSpawn()
+function Enemy.checkSpawn()
   -- spawn crabs
   if (#crabs < (day == 1 and maxEnemies or maxEnemies/2) and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
@@ -344,7 +351,7 @@ function Enemy:checkSpawn()
   end
 
   -- spawn puffers
-  if (day > 2 and #puffers < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
+  if (day > 0 and #puffers < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = addPuffer(point)
     enemy:add()

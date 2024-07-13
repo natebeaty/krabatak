@@ -11,7 +11,7 @@ import "building"
 import "supply"
 import "train"
 import "enemy"
-import "boss"
+-- import "boss"
 import "animations"
 import "levels/city"
 -- import "level"
@@ -79,7 +79,7 @@ end
 function resetCamera()
   player:respawn()
   cameraY = 0
-  city:setY(-120)
+  City.setY(-120)
 end
 
 -- Status bar on top with fuel, score, lives
@@ -113,18 +113,15 @@ end
 
 -- Initial setup
 function setup()
-  print("setup")
   level = 1
   day = 1
   enemiesKilled = 0
-  city = City()
-  player = Player()
-  player:add()
-  supply = Supply()
-  train = Train()
-  building = Building()
-  building:makeBuildings()
   statusBar = setupStatusBar()
+  City.init()
+  Building.makeBuildings()
+  Supply.init()
+  player = Player()
+  train = Train()
   animations = Animations()
   mode = "title"
   musicSfx:play()
@@ -144,8 +141,8 @@ end
 -- enemy killed, check level progress
 function checkLevel()
   enemiesKilled += 1
-  if enemiesKilled >= 5 + 5*(level-1) then
-  -- if enemiesKilled >= 1 + 1*(level-1) + 3*(day-1) then
+  if enemiesKilled >= 1 + 1*(level-1) then
+  -- if enemiesKilled >= 5 + 5*(level-1) + 3*(day-1) then
     levelFinished()
   end
 end
@@ -155,30 +152,30 @@ function levelFinished()
   inputPause = 30
   resetCamera()
   mode = "bonus"
-  Enemy:resetAll()
+  Enemy:clearAll()
 end
 
 -- level passed!
 function nextLevel()
   emptyStage()
   blinkyBuildings = nil
-  building:reshuffle()
+  Building.reshuffle()
   if level % 3 == 0 then
     day += 1
     level = 0
   end
   level += 1
-  -- Enemy:setMax(level*day)
-  Enemy:setMax(5)
+  -- Enemy.setMax(level*day)
+  Enemy.setMax(5)
   player:respawn()
   if level % 3 == 1 then
-    city:changeBg("day")
+    City.changeBg("day")
     setVerticalScroll(day > 1 and true or false)
   elseif level % 3 == 2 then
-    city:changeBg("dusk")
+    City.changeBg("dusk")
     setVerticalScroll(day > 1 and true or false)
   elseif level % 3 == 0 then
-    city:changeBg("night")
+    City.changeBg("night")
     setVerticalScroll(day > 1 and true or false)
   end
   -- if level == 2 then
@@ -194,8 +191,8 @@ function startGame()
   inputPause = 30
   startGameSfx:play()
   emptyStage()
-  building:clearAll()
-  building:makeBuildings()
+  Building.clearAll()
+  Building.makeBuildings()
   pd.graphics.sprite.redrawBackground()
   mode = "game"
 end
@@ -203,24 +200,26 @@ end
 -- restart after game over
 function restart()
   inputPause = 30
-  building:clearAll()
-  building:makeBuildings()
+  Building.clearAll()
+  Building.makeBuildings()
   player:restart()
+  titleTimer:start()
   musicSfx:play()
   mode = "title"
   day = 1
   level = 1
-  city:changeBg("day")
-  Enemy:setMax(level*day)
+  City.changeBg("day")
+  Enemy.setMax(level*day)
   emptyStage()
   -- music(1,2500)
 end
 
 function emptyStage()
   enemiesKilled = 0
-  building:resetBonus()
-  Enemy:resetAll()
-  supply:reset()
+  Building.resetBonus()
+  Enemy.clearAll()
+  EnemyBullet.clearAll()
+  Supply.clearAll()
 end
 
 -- set..up..
@@ -267,16 +266,15 @@ end
 function pd.update()
   if verticalScroll and player.position.y <= 120 then
     local cityY = math.min(-player.position.y, 20)
-    city:setY(cityY)
+    City.setY(cityY)
     cameraY = floor(cityY + 120)
-    -- print(player.position.y, cityY, cameraY, -120 - player.position.y + 120)
   end
 
   gfx.setDrawOffset(0,cameraY)
 
   gfx.sprite.update()
   sequence.update()
-  Boss:update()
+  -- Boss:update()
 
   screenShake()
 
@@ -290,7 +288,7 @@ function pd.update()
 
   if mode == "title" then
 
-    Enemy:checkSpawn()
+    Enemy.checkSpawn()
     if titleTimer.frame == 11 then
       titleGfx:draw(math.random(35,45), math.random(35,45))
     else
@@ -306,12 +304,12 @@ function pd.update()
 
   elseif mode == "game" then
 
-    Enemy:checkSpawn()
+    Enemy.checkSpawn()
     if player.mode == "man" then
       -- draw stationary docked plane while man runs around
       drawPlane()
     end
-    gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
+    -- gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
 
   elseif mode == "game_over" then
 
@@ -333,7 +331,7 @@ function pd.update()
       lastBonusStagger = 0
     end
     if bonusStagger<=0 then
-      if building:checkBonus() then
+      if Building.checkBonus() then
         if lastBonusStagger > 0.1 then
           bonusStagger = lastBonusStagger
           lastBonusStagger = lastBonusStagger/1.025

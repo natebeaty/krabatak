@@ -75,6 +75,8 @@ function Bullet:update()
       other.parent:hit(self.x,self.y)
     elseif other:isa(Block) and not other.broken then
       other:hit()
+    elseif other.isEnemyBullet then
+      other:hit()
     elseif other:isa(Supply) or other.isBalloon then
       other:die()
     end
