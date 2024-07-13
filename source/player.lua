@@ -264,7 +264,7 @@ function Player:update()
     elseif other.isEnemy then
       self:die()
       other:die()
-    elseif other:isa(Supply) then
+    elseif other:isa(SupplyShip) then
       self:die()
       other:die()
     elseif other:isa(Train) then

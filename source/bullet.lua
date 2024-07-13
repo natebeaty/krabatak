@@ -77,7 +77,7 @@ function Bullet:update()
       other:hit()
     elseif other.isEnemyBullet then
       other:hit()
-    elseif other:isa(Supply) or other.isBalloon then
+    elseif other:isa(SupplyShip) or other.isBalloon then
       other:die()
     end
     if not other.isBoss then
