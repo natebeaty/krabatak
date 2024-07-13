@@ -81,3 +81,7 @@ end
 function closeness(one, other)
   return distanceToPoint(one.x, one.y, other.x, other.y)
 end
+
+function isOffstage(x,y,w,h)
+  return x < -w or x > 400+w or y < -cameraY+30-h or y > 240+h
+end
