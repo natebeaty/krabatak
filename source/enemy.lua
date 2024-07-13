@@ -308,10 +308,12 @@ function Gremlin:update()
 
 end
 
--- static Enemy
+-- set max enemies
 function Enemy.setMax(n)
   maxEnemies = n
 end
+
+-- clear all enemies
 function Enemy.clearAll()
   for a=1, #crabs do
     removeCrab(crabs[a])
@@ -325,10 +327,11 @@ function Enemy.clearAll()
   for a=1, #puffers do
     removePuffer(puffers[a])
   end
-  -- crabs = {}
-  -- gremlins = {}
-  -- bishops = {}
-  -- puffers = {}
+  -- clear out on-screen crabs
+  crabs = {}
+  gremlins = {}
+  bishops = {}
+  puffers = {}
 end
 
 function Enemy.checkSpawn()

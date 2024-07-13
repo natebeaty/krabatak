@@ -72,6 +72,42 @@ cameraY = 0
 blinkyBuildings = nil
 NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
 
+-- text with shadow
+function shadowText(text, x, y)
+  -- Draw text shadow
+  gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
+  gfx.drawTextAligned(text, x-1, y-1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x-1, y+1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y-1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+1, y+1, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+2, y+2, kTextAlignment.center)
+  gfx.drawTextAligned(text, x+3, y+3, kTextAlignment.center)
+  -- Draw text
+  gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
+
+  gfx.setImageDrawMode("copy")
+end
+
+-- rounded button with centered text
+function buttonText(text, x, y)
+  local h = font:getHeight()
+  local w = font:getTextWidth(text)
+  local buttonX = x-(w+31)/2
+  local buttonY = y-3
+  gfx.setColor(gfx.kColorWhite)
+  gfx.setLineWidth(8)
+  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
+  gfx.setColor(gfx.kColorBlack)
+  gfx.setLineWidth(4)
+  gfx.setImageDrawMode("inverted")
+  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
+  gfx.fillRect(buttonX, buttonY, w+30, h+4)
+  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
+  gfx.setImageDrawMode("copy")
+end
+
 function setVerticalScroll(flag)
   verticalScroll = flag
   playerMinY = verticalScroll and -100 or 33
@@ -222,45 +258,8 @@ function emptyStage()
   Supply.clearAll()
 end
 
--- set..up..
+-- set..up..game..pow..
 setup()
-
--- text with shadow
-function shadowText(text, x, y)
-  -- Draw text shadow
-  gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-  gfx.drawTextAligned(text, x-1, y-1, kTextAlignment.center)
-  gfx.drawTextAligned(text, x-1, y+1, kTextAlignment.center)
-  gfx.drawTextAligned(text, x+1, y-1, kTextAlignment.center)
-  gfx.drawTextAligned(text, x+1, y, kTextAlignment.center)
-  gfx.drawTextAligned(text, x+1, y+1, kTextAlignment.center)
-  gfx.drawTextAligned(text, x+2, y+2, kTextAlignment.center)
-  gfx.drawTextAligned(text, x+3, y+3, kTextAlignment.center)
-  -- Draw text
-  gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
-
-  gfx.setImageDrawMode("copy")
-end
-
--- rounded button with centered text
-function buttonText(text, x, y)
-  local h = font:getHeight()
-  local w = font:getTextWidth(text)
-  local buttonX = x-(w+31)/2
-  local buttonY = y-3
-  gfx.setColor(gfx.kColorWhite)
-  gfx.setLineWidth(8)
-  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
-  gfx.setColor(gfx.kColorBlack)
-  gfx.setLineWidth(4)
-  gfx.setImageDrawMode("inverted")
-  gfx.drawRoundRect(buttonX, buttonY, w+30, h+4, 5)
-  gfx.fillRect(buttonX, buttonY, w+30, h+4)
-  gfx.drawTextAligned(text, x, y, kTextAlignment.center)
-  gfx.setImageDrawMode("copy")
-end
-
 
 -- big ol' update loop
 function pd.update()
