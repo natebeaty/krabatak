@@ -7,6 +7,7 @@ local random <const>, sin <const>, cos <const>, atan2 <const> = math.random, mat
 class("Puffer").extends(gfx.sprite)
 
 local pufferImagesTable = gfx.imagetable.new("images/puffer")
+local pufferPuffingImagesTable = gfx.imagetable.new("images/puffer-puffing")
 local pufferHitSfx = sound.sampleplayer.new("sounds/bishop-hit")
 local pufferCache = {}
 
@@ -95,15 +96,15 @@ end
 
 function Puffer:update()
   -- show damage if hit
-  -- if self:isDamaged() then
-  --   self:setImage(pufferDamagedImagesTable:getImage(self.stepTimer.frame % 6 + 1))
-  -- else
+  if self.puffing > 0 then
+    self:setImage(pufferPuffingImagesTable:getImage(self.stepTimer.frame % 6 + 1))
+  else
     self:setImage(pufferImagesTable:getImage(self.stepTimer.frame % 6 + 1))
-  -- end
+  end
 
-  -- start puffing? ( and self.y > 50 and self.y < 200)
-  if self.puffing == 0 and self.x > 50 and self.x < 350 and random(1000)>995 then
-    self.puffing = 150
+  -- start puffing?
+  if self.puffing == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>990 then
+    self.puffing = random(75,125)
     -- self.laser = addLaser(self.x, self.y)
   end
 
@@ -112,12 +113,12 @@ function Puffer:update()
     self.position += self.velocity
     self:moveTo(self.position)
   else
-    if self:isDamaged() then
-      -- move slowly while puffing if damaged
-      self.position += self.velocity * 0.15
-      self:moveTo(self.position)
-      -- self.laser:setPosition(self.x, self.y)
-    end
+    -- if self:isDamaged() then
+    --   -- move slowly while puffing if damaged
+    --   self.position += self.velocity * 0.15
+    --   self:moveTo(self.position)
+    --   -- self.laser:setPosition(self.x, self.y)
+    -- end
     self.puffing -= 1
   end
 
