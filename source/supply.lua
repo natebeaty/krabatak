@@ -117,7 +117,7 @@ function SupplyShip:init()
   self:setCollideRect(5, 5, 46, 10)
   self:setGroups({3})
   self:setCollidesWithGroups({1})
-  -- self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+  self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
 
   self.position = point.new(-200,0)
   self:moveTo(self.position)
