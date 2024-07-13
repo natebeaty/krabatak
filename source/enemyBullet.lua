@@ -31,7 +31,7 @@ function EnemyBullet:init(type)
   EnemyBullet.super.init(self)
 
   self:setGroups({1})
-  self:setCollidesWithGroups({1})
+  self:setCollidesWithGroups({1,3})
   self:setZIndex(1002)
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
   local bullet = bulletGfx:getImage(1)
@@ -75,6 +75,8 @@ function EnemyBullet:update()
     if other:isa(Player) and not player.dying then
       player:die()
       removeEnemyBullet(self)
+    elseif other:isa(SupplyShip) or other.isBalloon then
+      other:die()
     elseif other.boundaryName then
       -- hit general boundary collision box (e.g. floor or playerswitch)
       removeEnemyBullet(self)
