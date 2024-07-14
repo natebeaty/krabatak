@@ -359,7 +359,7 @@ function Player:shoot()
 
     -- add bullet at location and matching velocity of direction
     local bulletSize = self.mode=="man" and 12 or 24
-    addBullet(bulletSize, self.position.x + bulletVelocity.x * 20, self.position.y + bulletVelocity.y * 20, bulletVelocity.x, bulletVelocity.y, self.facing)
+    addBullet(bulletSize, self.position.x + bulletVelocity.x * bulletSize, self.position.y + bulletVelocity.y * bulletSize, bulletVelocity.x, bulletVelocity.y, self.facing)
 
   end
 end
