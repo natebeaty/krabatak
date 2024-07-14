@@ -76,6 +76,7 @@ function Bullet:update()
     elseif other:isa(Block) and not other.broken then
       other:hit()
     elseif other.isEnemyBullet then
+      player:addScore(other.points)
       other:hit()
     elseif other:isa(SupplyShip) or other.isBalloon then
       other:die()
