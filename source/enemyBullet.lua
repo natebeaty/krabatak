@@ -40,6 +40,7 @@ function EnemyBullet:init(type)
 
   self.t = 0
   self.isEnemyBullet = true
+  self.points = 10
 
   return self
 end
@@ -75,6 +76,9 @@ function EnemyBullet:update()
     if other:isa(Player) and not player.dying then
       player:die()
       removeEnemyBullet(self)
+    -- elseif other:isa(Block) and not other.broken then
+    --   other:hit()
+    --   removeEnemyBullet(self)
     elseif other:isa(SupplyShip) or other.isBalloon then
       other:die()
     elseif other.boundaryName then

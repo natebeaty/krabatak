@@ -44,9 +44,12 @@ local gameOverGfx = gfx.image.new("images/game-over")
 local heartGfx = gfx.image.new("images/heart")
 local blinkTimer = frameTimer.new(10)
 local titleTimer = frameTimer.new(11)
+local buttonBlinkTimer = frameTimer.new(11*8)
 local inputPause = 0
 local boss1 = nil
+
 blinkTimer.repeats = true
+buttonBlinkTimer.repeats = true
 titleTimer.repeats = true
 
 -- betterize random
@@ -179,8 +182,8 @@ end
 -- enemy killed, check level progress
 function checkLevel()
   enemiesKilled += 1
-  if enemiesKilled >= 1 + 1*(level-1) then
-  -- if enemiesKilled >= 5 + 5*(level-1) + 3*(day-1) then
+  -- if enemiesKilled >= 1 + 1*(level-1) then
+  if enemiesKilled >= 5 + 5*(level-1) + 3*(day-1) then
     levelFinished()
   end
 end
@@ -203,8 +206,8 @@ function nextLevel()
     level = 0
   end
   level += 1
-  -- Enemy.setMax(level*day)
-  Enemy.setMax(5)
+  Enemy.setMax(level*day)
+  -- Enemy.setMax(5)
   player:respawn()
   if level % 3 == 1 then
     City.changeBg("day")
@@ -249,7 +252,7 @@ function restart()
   City.changeBg("day")
   Enemy.setMax(level*day)
   emptyStage()
-  -- music(1,2500)
+  setVerticalScroll(false)
 end
 
 function emptyStage()
@@ -275,14 +278,9 @@ function pd.update()
 
   gfx.sprite.update()
   sequence.update()
-  -- Boss:update()
+  -- Boss:update() -- disabling bosses for now
 
   screenShake()
-
--- 0
--- 100: cityY = -100
--- 120
--- 240
 
   -- pause input (e.g. after level ends)
   if inputPause > 0 then inputPause-=1 end
@@ -296,11 +294,15 @@ function pd.update()
       titleGfx:draw(40, 40)
     end
     if inputPause==0 then
-      buttonText("Ⓐ START", 200, 135)
+      if buttonBlinkTimer.frame < 11*7 then
+        buttonText("Ⓐ START", 200, 137+(buttonBlinkTimer.frame<3 and 3-buttonBlinkTimer.frame or 0))
+      end
       if pd.buttonJustPressed("A") then
         menuActionSfx:play()
         startGame()
       end
+    else
+      buttonBlinkTimer:reset()
     end
 
   elseif mode == "game" then
@@ -310,17 +312,20 @@ function pd.update()
       -- draw stationary docked plane while man runs around
       drawPlane()
     end
-    -- gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
 
   elseif mode == "game_over" then
 
-    gameOverGfx:draw(150, 40)
+    gameOverGfx:draw(150, 50)
     if inputPause==0 then
-      buttonText("Ⓐ RESTART", 200, 120)
+      if buttonBlinkTimer.frame < 11*7 then
+        buttonText("Ⓐ RESTART", 200, 137+(buttonBlinkTimer.frame<3 and 3-buttonBlinkTimer.frame or 0))
+      end
       if pd.buttonJustPressed("A") then
         menuActionSfx:play()
         restart()
       end
+    else
+      buttonBlinkTimer:reset()
     end
 
   elseif mode == "bonus" then
@@ -358,6 +363,9 @@ function pd.update()
   end
 
   frameTimer.updateTimers()
-  pd.drawFPS(2, 224)
+
+  -- debug stuff
+  -- pd.drawFPS(2, 224)
+  -- gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
 
 end
