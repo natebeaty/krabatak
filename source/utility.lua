@@ -83,5 +83,9 @@ function closeness(one, other)
 end
 
 function isOffstage(x,y,w,h)
-  return x < -w or x > 400+w or y < -cameraY-h or y > 240+h
+  return x < -w/2 or x > 400+w/2 or y < -cameraY-h/2 or y > 240+h/2
+end
+
+function isVisible(x,y,w,h)
+  return x > 0+w/2 and x < 400-w/2 and y > -cameraY+h/2+30 and y < -cameraY+screenHeight-h/2
 end

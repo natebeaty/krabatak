@@ -23,9 +23,11 @@ local puffingFrames = {
 
 -- Puffers
 function removePuffer(puffer)
+  puffer.directionTimer:reset()
   puffer.directionTimer:pause()
   puffer.stepTimer:pause()
   puffer.hits = 2
+  puffer.puffing = 0
   puffer:remove()
   pufferCache[#pufferCache+1] = puffer
 end
@@ -121,7 +123,7 @@ function Puffer:update()
   end
 
   -- start puffing?
-  if self.puffing == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>995 then
+  if self.puffing == 0 and isVisible(self.x,self.y,self.width,self.height) and random(1000)>995 then
     self.puffing = #puffingFrames
   end
 

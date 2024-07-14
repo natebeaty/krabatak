@@ -107,7 +107,7 @@ function Bishop:update()
   end
 
   -- start lasering?
-  if self.lasering == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>995 then
+  if self.lasering == 0  and isVisible(self.x,self.y,self.width,self.height) and random(1000)>995 then
     self.lasering = 150
     self.laser = addLaser(self.x, self.y)
   end
