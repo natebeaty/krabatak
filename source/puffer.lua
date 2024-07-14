@@ -2,7 +2,7 @@ local gfx <const> = playdate.graphics
 local sound <const> = playdate.sound
 local vector2D <const> = playdate.geometry.vector2D
 local frameTimer <const> = playdate.frameTimer
-local random <const>, sin <const>, cos <const>, atan2 <const> = math.random, math.sin, math.cos, math.atan2
+local random <const>, sin <const>, cos <const>, atan2 <const>, rad <const> = math.random, math.sin, math.cos, math.atan2, math.rad
 
 class("Puffer").extends(gfx.sprite)
 
@@ -10,6 +10,16 @@ local pufferImagesTable = gfx.imagetable.new("images/puffer")
 local pufferPuffingImagesTable = gfx.imagetable.new("images/puffer-puffing")
 local pufferHitSfx = sound.sampleplayer.new("sounds/bishop-hit")
 local pufferCache = {}
+local puffingFrames = {
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+  3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+  4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+  3,3,6,6,3,3,6,6,3,3,6,6,3,3,6,6,
+  3,3,6,6,3,3,6,6,6,3,6,3,6,3,6,3,
+  3,6,3,6,3,6,3,3,6,3,6,3,6,3,6,3,
+}
 
 -- Puffers
 function removePuffer(puffer)
@@ -65,10 +75,10 @@ end
 function Puffer:changeDirection()
   self.directionTimer.duration = random(10)+200
   self.directionTimer:reset()
-  local multiplier = self:isDamaged() and 5 or 0.55
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
+  local multiplier = self:isDamaged() and 2 or 1.25
+  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 100/10000+1.25) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 100/10000+1.5) * multiplier
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
+    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 100/10000+1.5) * multiplier
   end
   self.velocity = vector2D.new(dx, dy)
 end
@@ -83,10 +93,10 @@ function Puffer:die()
   else
     pufferHitSfx:play()
     -- abruptly move towards player when hit
-    local angleToPlayer = atan2(player.y - self.y, player.x - self.x)
-    local dx, dy = cos(angleToPlayer) * 1.5, sin(angleToPlayer) * 1.5
-    self.velocity = vector2D.new(dx, dy)
-    self.directionTimer.duration = random(250)+50
+    -- local angleToPlayer = atan2(player.y - self.y, player.x - self.x)
+    -- local dx, dy = cos(angleToPlayer) * 1.5, sin(angleToPlayer) * 1.5
+    -- self.velocity = vector2D.new(dx, dy)
+    -- self.directionTimer.duration = random(250)+50
     self.hits -= 1
     return false
   end
@@ -97,15 +107,22 @@ end
 function Puffer:update()
   -- show damage if hit
   if self.puffing > 0 then
-    self:setImage(pufferPuffingImagesTable:getImage(self.stepTimer.frame % 6 + 1))
+    self:setImage(pufferPuffingImagesTable:getImage(puffingFrames[#puffingFrames - self.puffing]))
   else
     self:setImage(pufferImagesTable:getImage(self.stepTimer.frame % 6 + 1))
   end
 
+  -- shoot stars!
+  if self.puffing == 1 then
+    local numStars = 10
+    for i=1,numStars do
+      addEnemyBullet(self.x, self.y, rad(360/numStars * i), 4)
+    end
+  end
+
   -- start puffing?
-  if self.puffing == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>990 then
-    self.puffing = random(75,125)
-    -- self.laser = addLaser(self.x, self.y)
+  if self.puffing == 0 and self.x > 50 and self.x < 350 and self.y > -cameraY + 50 and random(1000)>995 then
+    self.puffing = #puffingFrames
   end
 
   -- if not puffing, move
@@ -122,12 +139,11 @@ function Puffer:update()
     self.puffing -= 1
   end
 
-  -- offscreen?
+  -- offscreen? reverse
   if self.position.y > enemyMaxY or self.position.y < (verticalScroll and -230 or 0) then
     self.velocity.y = -self.velocity.y;
   end
   if self.position.x < enemyMinX or self.position.x > enemyMaxX then
-    -- self.position = point.new(rnd(400), -cameraY)
     self.velocity.x = -self.velocity.x;
   end
 end
