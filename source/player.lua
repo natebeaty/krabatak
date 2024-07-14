@@ -8,7 +8,6 @@ local frameTimer <const> = playdate.frameTimer
 local point <const> = playdate.geometry.point
 local vector2D <const> = playdate.geometry.vector2D
 local min, max, abs, floor = math.min, math.max, math.abs, math.floor
-local screenWidth <const>, _ = playdate.display.getSize()
 
 local planeMinVelocity = 3
 local planeMaxVelocity = 9

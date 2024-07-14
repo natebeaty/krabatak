@@ -72,6 +72,8 @@ cameraY = 0
 blinkyBuildings = nil
 NW,N,NE,W,E,SW,S,SE = 1,2,3,4,6,7,8,9  -- plane sprite imageTable indexes, also used in Bullet
 
+screenWidth, screenHeight = playdate.display.getSize()
+
 -- text with shadow
 function shadowText(text, x, y)
   -- Draw text shadow

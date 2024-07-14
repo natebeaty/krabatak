@@ -22,7 +22,6 @@ local balloonImagesTable = gfx.imagetable.new("images/balloon")
 local deathSfx = sound.sampleplayer.new("sounds/death")
 local balloonDeploySfx = sound.sampleplayer.new("sounds/balloon-deploy")
 
-local screenWidth <const>, _ = playdate.display.getSize()
 local balloon = AnimatedSprite.new(balloonImagesTable)
 local supplyShip
 
