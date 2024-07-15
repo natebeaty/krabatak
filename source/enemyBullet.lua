@@ -38,7 +38,6 @@ function EnemyBullet:init(type)
   self:setImage(bullet)
   self:setCollideRect(0, 0, bullet:getSize())
 
-  self.t = 0
   self.isEnemyBullet = true
   self.points = 10
 
@@ -63,13 +62,8 @@ function EnemyBullet:hit()
 end
 
 function EnemyBullet:update()
-  self.t += 1
   self.x, self.y = self.x + self.dx, self.y + self.dy
   local x,y,c,l = self:moveWithCollisions(self.x, self.y)
-
-  -- animate bullet
-  local i = self.t % 2 == 0 and 1 or 2
-  self:setImage(bulletGfx:getImage(i))
 
   for i=1,l do
     local other = c[i].other

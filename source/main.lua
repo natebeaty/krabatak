@@ -365,7 +365,7 @@ function pd.update()
   frameTimer.updateTimers()
 
   -- debug stuff
-  -- pd.drawFPS(2, 224)
+  pd.drawFPS(2, 224)
   -- gfx.drawText("camy: "..cameraY, 5, 220 - cameraY)
 
 end
