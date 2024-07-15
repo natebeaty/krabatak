@@ -3,7 +3,8 @@
 local min <const>, max <const>, abs <const>, random <const>, ceil <const> = math.min, math.max, math.abs, math.random, math.ceil
 local distanceToPoint <const> = playdate.geometry.distanceToPoint
 
-local function clamp(a, b, c)
+-- clamp number a between b and c
+function clamp(a, b, c)
   if b > c then
     b, c = c, b
   end
@@ -83,7 +84,7 @@ function closeness(one, other)
 end
 
 function isOffstage(x,y,w,h)
-  return x < -w/2 or x > 400+w/2 or y < -cameraY-h/2 or y > 240+h/2
+  return x < -w/2 or x > 400+w/2 or y < (verticalScroll and -120 or 0)-h/2 or y > 240+h/2
 end
 
 function isVisible(x,y,w,h)
