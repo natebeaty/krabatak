@@ -1,6 +1,7 @@
 import "puffer"
 import "crab"
 import "bishop"
+import "jellyfish"
 import "enemyBullet"
 
 class("Enemy").extends()
@@ -20,6 +21,7 @@ crabs = {}
 gremlins = {}
 bishops = {}
 puffers = {}
+jellyfish = {}
 maxEnemies = 1
 
 
@@ -42,11 +44,15 @@ function Enemy.clearAll()
   for a=1, #puffers do
     removePuffer(puffers[a])
   end
+  for a=1, #jellyfish do
+    removeJellyfish(jellyfish[a])
+  end
   -- clear out on-screen crabs
   crabs = {}
   gremlins = {}
   bishops = {}
   puffers = {}
+  jellyfish = {}
 end
 
 function Enemy.checkSpawn()
@@ -67,10 +73,20 @@ function Enemy.checkSpawn()
   end
 
   -- spawn puffers
-  if (day > 0 and #puffers < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
+  if (day > 2 and #puffers < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
     local point = point.new(rnd(400), -cameraY + 10)
     local enemy = addPuffer(point)
     enemy:add()
     add(puffers, enemy)
+  end
+
+  -- spawn jellyfish
+  if (day > 0 and #jellyfish < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
+    local leftOfScreen = random(1000)>500 and -1 or 1
+    local point = point.new((leftOfScreen > 1 and -10 or 410), -cameraY + random(10,100))
+    local velocity = vector2D.new(leftOfScreen*(rnd(1)+1.35), rnd(1)+0.75)
+    local enemy = addJellyfish(point, velocity)
+    enemy:add()
+    add(jellyfish, enemy)
   end
 end
