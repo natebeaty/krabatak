@@ -5,9 +5,9 @@ local frameTimer <const> = playdate.frameTimer
 local random <const>, sin <const>, cos <const>, atan2 <const>, rad <const> = math.random, math.sin, math.cos, math.atan2, math.rad
 
 class("Jellyfish").extends(gfx.sprite)
-
 local jellyfishImagesTable = gfx.imagetable.new("images/jellyfish")
 local jellyfishHitSfx = sound.sampleplayer.new("sounds/bishop-hit")
+local bubbleSfx = sound.sampleplayer.new("sounds/bubble")
 local jellyfishCache = {}
 local idleFrames = {
   1,1,1,1,1,
@@ -60,7 +60,7 @@ function Jellyfish:init()
   Jellyfish.super.init(self)
   self:setImage(jellyfishImagesTable:getImage(1))
   self:setZIndex(900)
-  self:setCollideRect(3, 5, 34, 30)
+  self:setCollideRect(20, 3, 22, 50)
   self:setGroups({1})
   self:setCollidesWithGroups({1})
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
@@ -88,9 +88,9 @@ function Jellyfish:changeDirection()
   self.directionTimer.duration = random(80)+100
   self.directionTimer:reset()
   local multiplier = self:isDamaged() and 1.2 or 0.5
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 50/10000+0.5) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 50/10000+0.5) * multiplier
+  local dx, dy = (rnd(2)-1) * (50/10000+0.5) * multiplier, (rnd()) * (50/10000+0.5) * multiplier
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 25/10000+1.5) * multiplier
+    dy=(rnd(2)-1) * (25/10000+1.5) * multiplier
   end
   self.velocity = vector2D.new(dx, dy)
 end
@@ -137,14 +137,20 @@ function Jellyfish:update()
     self:setImage(jellyfishImagesTable:getImage(idleFrames[frameAt]))
   end
 
-  -- add thrust up as ending surging animation
+  -- add thrust up when nearing end of surge animation
   if self.surging == 20 then
     self.thrust = 1.2 + random(8)*0.10
+    -- make sure we're surging up
     if self.velocity.y>0 then
-      print("lt0", self.velocity)
       self.velocity.y = -self.velocity.y
     end
-    -- self.velocity = vector2D.new(self.velocity.x, -4)
+    -- emit some bubbles
+    for i=1,random(1,3) do
+      local x = self.x + (rnd(2)-1)*random(5,10)
+      local y = self.y + 10 + (rnd(2)-1)*random(5,10)
+      addEnemyBullet(x, y, rad(90), -rnd(1)-0.5, 2)
+      bubbleSfx:play()
+    end
   end
 
   -- start surging?
@@ -152,36 +158,33 @@ function Jellyfish:update()
     self.surging = #surgingFrames
   end
 
-  -- if not surging, move
-  -- if self.surging == 0 then
-    self.position += self.velocity
-    self:moveTo(self.position)
-  -- else
+  -- move it
+  self.position += self.velocity
+  self:moveTo(self.position)
+
+  -- decrease surging counter
   if self.surging > 0 then
-    -- if self:isDamaged() then
-    --   -- move slowly while surging if damaged
-    --   self.position += self.velocity * 0.15
-    --   self:moveTo(self.position)
-    --   -- self.laser:setPosition(self.x, self.y)
-    -- end
     self.surging -= 1
   end
 
+  -- decrease thrust if > 1
   if self.thrust > 1 then
     self.thrust = self.thrust*0.91
     self.velocity.y = self.velocity.y * self.thrust;
-    print("thrust", self.velocity.y, self.thrust)
   end
 
-  -- offscreen? reverse
-  if self.position.y > enemyMaxY  then
-    self.velocity.y = clamp(-self.velocity.y*0.85, -1, -2);
-  end
-  if self.position.y < -cameraY - 50 then
-    del(jellyfish, self)
-    removeJellyfish(self)
+  -- at bottom, left or right? reverse
+  if self.position.y > enemyMaxY then
+    self.velocity.y = clamp(-self.velocity.y*1.15, -1, -2);
   end
   if self.position.x < enemyMinX or self.position.x > enemyMaxX then
     self.velocity.x = -self.velocity.x*1.25;
   end
+
+    -- too high? remove
+  if self.position.y < -cameraY - 50 then
+    del(jellyfish, self)
+    removeJellyfish(self)
+  end
+
 end
