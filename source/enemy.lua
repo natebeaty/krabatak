@@ -12,7 +12,6 @@ local vector2D <const> = playdate.geometry.vector2D
 local frameTimer <const> = playdate.frameTimer
 local random <const>, sin <const>, cos <const>, atan2 <const> = math.random, math.sin, math.cos, math.atan2
 
-enemySpeed = 1
 enemyMinX = -20
 enemyMaxX = 420
 enemyMaxY = 190
@@ -83,8 +82,8 @@ function Enemy.checkSpawn()
   -- spawn jellyfish
   if (day > 0 and #jellyfish < (day == 2 and maxEnemies/3 or maxEnemies/4) and rnd()>0.98) then
     local leftOfScreen = random(1000)>500 and -1 or 1
-    local point = point.new((leftOfScreen > 1 and -10 or 410), -cameraY + random(10,100))
-    local velocity = vector2D.new(leftOfScreen*(rnd(1)+1.35), rnd(1)+0.75)
+    local point = point.new((leftOfScreen > 0 and -10 or 410), -cameraY + random(50,150))
+    local velocity = vector2D.new(leftOfScreen*(rnd(1)+1.15), rnd(1)+0.75)
     local enemy = addJellyfish(point, velocity)
     enemy:add()
     add(jellyfish, enemy)

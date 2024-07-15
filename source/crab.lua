@@ -70,10 +70,10 @@ end
 function Crab:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 47.5/10000+1) * 1.25, (rnd()) * (enemySpeed * enemySpeed * 55.5/10000+1) * 1.55
+  local dx, dy = (rnd(2)-1) * (47.5/10000+1) * 1.25, (rnd()) * (55.5/10000+1) * 1.55
   -- bounce off edge
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 1.75
+    dy=(rnd(2)-1) * (49/10000+1) * 1.75
   end
   self.velocity = vector2D.new(dx, dy)
   Gremlin:checkSpawn(self.position)
@@ -171,7 +171,7 @@ end
 function Gremlin:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 48/10000+1) * 0.5, (rnd()) * (enemySpeed * enemySpeed * 48/10000+1) * 0.5
+  local dx, dy = (rnd(2)-1) * (48/10000+1) * 0.5, (rnd()) * (48/10000+1) * 0.5
   self.velocity = vector2D.new(dx, dy)
 end
 

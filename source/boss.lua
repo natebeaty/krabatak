@@ -138,9 +138,9 @@ function Boss1:changeDirection()
   self.directionTimer.duration = random(50)+100
   self.directionTimer:reset()
   -- print("boss1.changeDirection")
-  -- local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75
+  -- local dx, dy = (rnd(2)-1) * (49/10000+1) * 0.75, (rnd()) * (49/10000+1) * 0.75
   -- if self.position.y>50 then
-  --   dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1) * 0.75
+  --   dy=(rnd(2)-1) * (49/10000+1) * 0.75
   -- end
   -- self.velocity = vector2D.new(dx, dy)
 end

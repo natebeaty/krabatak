@@ -70,9 +70,9 @@ function Bishop:changeDirection()
   self.directionTimer.duration = self:isDamaged() and random(50)+50 or random(100)+200
   self.directionTimer:reset()
   local multiplier = self:isDamaged() and 5 or 0.55
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
+  local dx, dy = (rnd(2)-1) * (49/10000+1.25) * multiplier, (rnd()) * (49/10000+1.25) * multiplier
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 49/10000+1.25) * multiplier
+    dy=(rnd(2)-1) * (49/10000+1.25) * multiplier
   end
   self.velocity = vector2D.new(dx, dy)
 end

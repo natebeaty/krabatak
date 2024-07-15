@@ -78,9 +78,9 @@ function Puffer:changeDirection()
   self.directionTimer.duration = random(10)+200
   self.directionTimer:reset()
   local multiplier = self:isDamaged() and 2 or 1.25
-  local dx, dy = (rnd(2)-1) * (enemySpeed * enemySpeed * 100/10000+1.25) * multiplier, (rnd()) * (enemySpeed * enemySpeed * 100/10000+1.5) * multiplier
+  local dx, dy = (rnd(2)-1) * (50/10000+1.25) * multiplier, (rnd()) * (50/10000+1.5) * multiplier
   if self.position.y > (verticalScroll and -230 or -20) then
-    dy=(rnd(2)-1) * (enemySpeed * enemySpeed * 100/10000+1.5) * multiplier
+    dy=(rnd(2)-1) * (100/10000+1.5) * multiplier
   end
   self.velocity = vector2D.new(dx, dy)
 end
