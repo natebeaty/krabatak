@@ -5,16 +5,21 @@ local random <const>, sin <const>, cos <const>, atan2 <const> = math.random, mat
 
 class("EnemyBullet").extends(gfx.sprite)
 
-local bulletGfx = gfx.imagetable.new("images/bullet-blorb")
+local bulletGfx = gfx.imagetable.new("images/enemy-bullet")
 local bulletCache = {}
-local bulletHitSfx = sound.sampleplayer.new("sounds/crash")
+local bulletHitSfx = {
+  sound.sampleplayer.new("sounds/crash"),
+  sound.sampleplayer.new("sounds/pop")
+}
 
-function addEnemyBullet(x, y, angle, speed)
+function addEnemyBullet(x, y, angle, speed, type)
+  type = type or 1
   local bullet = nil
   if #bulletCache > 0 then
     bullet = table.remove(bulletCache)
+    bullet.type = type
   else
-    bullet = EnemyBullet()
+    bullet = EnemyBullet(type)
   end
   bullet:moveTo(x, y)
   bullet:setVelocity(angle, speed)
@@ -30,13 +35,14 @@ end
 function EnemyBullet:init(type)
   EnemyBullet.super.init(self)
 
+  self.type = type or 1
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
-  self:setZIndex(1002)
+  self:setZIndex(890)
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
-  local bullet = bulletGfx:getImage(1)
+  local bullet = bulletGfx:getImage(type)
   self:setImage(bullet)
-  self:setCollideRect(0, 0, bullet:getSize())
+  self:setCollideRect(2,2,12,12) -- todo: set these from a table of different collisions for different bullet types?
 
   self.isEnemyBullet = true
   self.points = 10
@@ -48,16 +54,14 @@ end
 function EnemyBullet:setVelocity(angle, speed)
   self.dx = speed * cos(angle)
   self.dy = speed * sin(angle)
+  -- if using degrees...
+  -- self.dx = math.cos((math.pi / 180) * angle) * speed
+  -- self.dy = math.sin((math.pi / 180) * angle) * speed
 end
-
--- function EnemyBullet:setVelocity(angle, speed)
---   self.dx = math.cos((math.pi / 180) * angle) * speed
---   self.dy = math.sin((math.pi / 180) * angle) * speed
--- end
 
 function EnemyBullet:hit()
   animations:explosion(self.x, self.y)
-  bulletHitSfx:play()
+  bulletHitSfx[self.type]:play()
   removeEnemyBullet(self)
 end
 
