@@ -99,6 +99,9 @@ function Puffer:die()
     -- local dx, dy = cos(angleToPlayer) * 1.5, sin(angleToPlayer) * 1.5
     -- self.velocity = vector2D.new(dx, dy)
     -- self.directionTimer.duration = random(250)+50
+    if self.puffing == 0 then
+      self.puffing = #puffingFrames - 1
+    end
     self.hits -= 1
     return false
   end
@@ -116,7 +119,7 @@ function Puffer:update()
 
   -- shoot stars!
   if self.puffing == 1 then
-    local numStars = 10
+    local numStars = random(8,20)
     for i=1,numStars do
       addEnemyBullet(self.x, self.y, rad(360/numStars * i), 4)
     end
