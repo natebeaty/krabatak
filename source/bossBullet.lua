@@ -103,7 +103,7 @@ function BossBullet:init(type)
   self:setBulletType(type)
   self:setGroups({1})
   self:setCollidesWithGroups({1,3})
-  self:setZIndex(1002)
+  self:setZIndex(950)
   self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
   self.t = 0
   self.isBossBullet = true
