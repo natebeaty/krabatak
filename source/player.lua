@@ -273,6 +273,9 @@ function Player:update()
       other:hit()
     elseif other:isa(BossBullet) then
       self:die()
+    elseif other:isa(EnemyBullet) then
+      other:hit()
+      self:die()
     end
   end
 
